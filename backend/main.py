@@ -112,9 +112,11 @@ def _train_and_store():
             store.update(models=models, metrics=metrics, medians=medians, ready=True, error=None)
             live.reset()
     except Exception as e:                                # pragma: no cover
-        store["error"] = repr(e)
+        with lock:
+            store["error"] = repr(e)
     finally:
-        store["training"] = False
+        with lock:
+            store["training"] = False
 
 
 def _load_or_train():
@@ -228,7 +230,12 @@ def scenarios():
                           {"id": "cloud_build", "label": "Cloud buildup"}, {"id": "shower", "label": "Passing shower"},
                           {"id": "rain_now", "label": "Rain now"}, {"id": "thunderstorm", "label": "Thunderstorm"},
                           {"id": "habagat", "label": "Habagat rain"}, {"id": "false_warning", "label": "Humid / cloudy, no rain"},
-                          {"id": "cool_evening", "label": "Cool evening"}]}
+                          {"id": "cool_evening", "label": "Cool evening"},
+                          {"id": "typhoon_approach", "label": "Typhoon approach (synthetic)"},
+                          {"id": "el_nino_dry", "label": "El Niño dry analogue"},
+                          {"id": "la_nina_wet", "label": "La Niña wet analogue"},
+                          {"id": "habagat_surge", "label": "Strong Habagat surge"},
+                          {"id": "flash_shower", "label": "Sudden intense shower"}]}
 
 
 @app.post("/api/location")
@@ -246,7 +253,9 @@ def set_location(payload: dict):
 # ------------------------------------------------------------------ ML endpoints
 @app.get("/api/ml/metrics")
 def get_metrics():
-    return {**store["metrics"], "model_ready": store["ready"], "training": store["training"], "error": store["error"]}
+    with lock:
+        return {**store["metrics"], "model_ready": store["ready"], "training": store["training"],
+                "error": ("Training failed. The previous model, if available, remains active." if store["error"] else None)}
 
 
 @app.get("/api/ml/features")
@@ -270,10 +279,15 @@ def dataset_preview(limit: int = 100):
 
 @app.post("/api/ml/train")
 def retrain():
-    if store["training"]:
-        return {"ok": False, "message": "Training already running", "metrics": store["metrics"]}
-    _train_and_store()
-    return {"ok": store["error"] is None, "metrics": store["metrics"], "error": store["error"]}
+    """Start an explicit retraining job without blocking the request thread."""
+    with lock:
+        if store["training"]:
+            return {"ok": False, "training": True, "message": "Training already running", "metrics": store["metrics"]}
+        store["error"] = None
+        store["training"] = True
+        worker = threading.Thread(target=_train_and_store, daemon=True)
+        worker.start()
+    return {"ok": True, "training": True, "message": "Training started", "metrics": store["metrics"]}
 
 
 @app.get("/api/ml/live")

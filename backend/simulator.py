@@ -28,7 +28,7 @@ MONTH_TEMP = [24.6, 25.1, 26.3, 27.5, 27.3, 26.4, 25.6, 25.6, 25.7, 25.8, 25.6, 
 SEASONS = {1: "dry", 2: "dry", 3: "dry", 4: "dry", 5: "transition", 6: "wet", 7: "wet",
            8: "wet", 9: "wet", 10: "wet", 11: "latewet", 12: "latewet"}
 SCENARIOS = ["natural", "sunny", "cloud_build", "shower", "thunderstorm", "habagat",
-             "false_warning", "cool_evening", "rain_now"]
+             "false_warning", "cool_evening", "rain_now", "typhoon_approach", "el_nino_dry", "la_nina_wet", "habagat_surge", "flash_shower"]
 
 CLEAR_SKY_LUX = 85000.0
 DRYOFF_MIN = 3          # rain plate stays wet this many minutes after last drop
@@ -165,7 +165,7 @@ class SyntheticWeather:
         if scenario not in SCENARIOS:
             scenario = "natural"
         self.scenario = scenario
-        self.suppress = scenario in ("sunny", "cool_evening")
+        self.suppress = scenario in ("sunny", "cool_evening", "el_nino_dry")
         # end anything already in progress, drop anything not yet started
         keep = []
         for s in self.systems:
@@ -188,7 +188,17 @@ class SyntheticWeather:
         elif scenario == "rain_now":
             s = self._new_system("convective", lead=0, strength=0.7, rains=True, dur=45)
             s.force_wet_until = self.n + 10
-            self.sys_p, self.sys_cloud, self.sys_h = -s.amp_p, 0.9, s.amp_h   # already under the system
+            self.sys_p, self.sys_cloud, self.sys_h = -s.amp_p, 0.9, s.amp_h
+        elif scenario == "typhoon_approach":
+            # Synthetic, exaggerated long-duration cyclone-like pressure/humidity signal.
+            self._new_system("frontal", lead=180, strength=1.0, rains=True, dur=600)
+        elif scenario == "la_nina_wet":
+            # A wet-climate analogue, not a statement about the current ENSO phase.
+            self._new_system("frontal", lead=90, strength=0.85, rains=True, dur=240)
+        elif scenario == "habagat_surge":
+            self._new_system("frontal", lead=100, strength=0.9, rains=True, dur=420)
+        elif scenario == "flash_shower":
+            self._new_system("convective", lead=20, strength=0.8, rains=True, dur=18)   # already under the system
 
     # --------------------------------------------------------------------- step
     def step(self) -> WeatherState:

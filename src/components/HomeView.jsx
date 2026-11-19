@@ -5,6 +5,8 @@ import { THRESHOLDS } from "../useDevice";
 import { logEvent } from "../sessionLog";
 import StatusCard from "./StatusCard";
 import ConfirmDialog from "./ConfirmDialog";
+import SimulationInsights from "./SimulationInsights";
+import ClotheslineVisualizer from "./ClotheslineVisualizer";
 
 function trend(t, v, up = 0.3) {
   return v <= -up ? t("falling") : v >= up ? t("rising") : t("steady");
@@ -31,6 +33,7 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
 
   return (
     <div className="space-y-4">
+      <div className="monitoring-mode-heading"><span className="section-kicker">01 · MONITORING DASHBOARD</span><span className="synthetic-feed-label">SYNTHETIC SENSOR FEED</span></div>
       {/* Visibility of system status: always say whether the unit is talking to us. */}
       <p className={`flex items-center gap-2 text-base font-semibold ${online ? "text-slate-700" : "text-slate-900"}`}>
         {online ? <Wifi aria-hidden="true" className="h-5 w-5" /> : <WifiOff aria-hidden="true" className="h-5 w-5" />}
@@ -47,16 +50,10 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
       )}
 
       {settings.cover && (
-        <section className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
-          <div>
-            <h3 className="text-lg font-bold text-slate-900">{t("coverTitle")}</h3>
-            <p className="text-base text-slate-700">{coverClosed ? t("coverClosed") : t("coverOpen")}</p>
-          </div>
-          <button onClick={() => setConfirm(true)}
-            className="min-h-12 rounded-xl border-2 border-slate-900 px-4 font-semibold text-slate-900 focus-visible:outline-4 focus-visible:outline-blue-600">
-            {coverClosed ? t("coverOpenBtn") : t("coverClose")}
-          </button>
-        </section>
+        <ClotheslineVisualizer
+          closed={coverClosed}
+          onToggle={() => setConfirm(true)}
+        />
       )}
 
       {/* Minimalism: sensor numbers are one tap away, not on the main screen. */}
@@ -91,6 +88,8 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
           </div>
         )}
       </section>
+
+      <SimulationInsights scenario={device.scenario} location={device.location}/>
 
       {confirm && (
         <ConfirmDialog title={coverClosed ? t("coverConfirmOpen") : t("coverConfirmClose")} body={t("coverWarn")}
