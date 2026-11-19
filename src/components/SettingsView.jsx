@@ -13,7 +13,7 @@ function Toggle({ label, desc, checked, onChange }) {
       <span className="flex items-center gap-2">
         <span className="w-12 text-right text-base font-semibold text-slate-800">{checked ? t("on") : t("off")}</span>
         <input type="checkbox" role="switch" checked={checked} onChange={(e) => onChange(e.target.checked)}
-          className="h-7 w-7 accent-slate-900 focus-visible:outline-4 focus-visible:outline-blue-600" />
+          className="settings-switch-input focus-visible:outline-4 focus-visible:outline-blue-600" />
       </span>
     </label>
   );
@@ -35,33 +35,38 @@ export default function SettingsView({ settings, update, notify, location, onLoc
   return (
     <div className="settings-stack">
       {location && <LocationPicker location={location} onChange={onLocationChange} notify={notify} />}
-      <fieldset className="rounded-2xl bg-white p-4 shadow-sm">
-        <legend className="px-1 text-lg font-bold text-slate-900">{t("sensitivity")}</legend>
-        <div className="mt-2 space-y-2">
-          {levels.map((l) => (
-            <label key={l} className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border-2 p-3 ${
-              settings.sensitivity === l ? "border-slate-900 bg-slate-50" : "border-slate-200"}`}>
-              <input type="radio" name="sens" checked={settings.sensitivity === l} onChange={() => setSens(l)}
-                className="mt-1 h-6 w-6 accent-slate-900 focus-visible:outline-4 focus-visible:outline-blue-600" />
-              <span>
-                <span className="block text-lg font-semibold text-slate-900">{t(cap[l])}</span>
-                <span className="block text-base text-slate-700">{t(`${cap[l]}Desc`)}</span>
-              </span>
-            </label>
-          ))}
-        </div>
-      </fieldset>
-
-      <section className="divide-y divide-slate-200 rounded-2xl bg-white px-4 py-2 shadow-sm">
-        <h2 className="py-2 text-lg font-bold text-slate-900">{t("alerts")}</h2>
-        <Toggle label={t("sound")} checked={settings.sound} onChange={(v) => setToggle("sound", v)} />
-        <Toggle label={t("vibration")} checked={settings.vibration} onChange={(v) => setToggle("vibration", v)} />
-        <Toggle label={t("cover")} desc={t("coverDesc")} checked={settings.cover} onChange={(v) => setToggle("cover", v)} />
+      <section className="settings-panel settings-sensitivity rounded-2xl bg-white p-4 shadow-sm" aria-labelledby="settings-sensitivity-title">
+        <h2 className="settings-panel-title" id="settings-sensitivity-title">{t("sensitivity")}</h2>
+        <fieldset className="settings-choice-group">
+          <legend className="sr-only">{t("sensitivity")}</legend>
+          <div className="settings-sensitivity-options">
+            {levels.map((l) => (
+              <label key={l} className={`flex min-h-14 cursor-pointer items-start gap-3 rounded-xl border-2 p-3 ${
+                settings.sensitivity === l ? "border-slate-900 bg-slate-50" : "border-slate-200"}`}>
+                <input type="radio" name="sens" checked={settings.sensitivity === l} onChange={() => setSens(l)}
+                  className="mt-1 h-6 w-6 accent-slate-900 focus-visible:outline-4 focus-visible:outline-blue-600" />
+                <span>
+                  <span className="block text-lg font-semibold text-slate-900">{t(cap[l])}</span>
+                  <span className="block text-base text-slate-700">{t(`${cap[l]}Desc`)}</span>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
       </section>
 
-      <fieldset className="rounded-2xl bg-white p-4 shadow-sm">
-        <legend className="px-1 text-lg font-bold text-slate-900">{t("language")}</legend>
-        <div className="mt-2 grid grid-cols-2 gap-2">
+      <section className="settings-panel settings-alerts rounded-2xl bg-white p-4 shadow-sm" aria-labelledby="settings-alerts-title">
+        <h2 className="settings-panel-title" id="settings-alerts-title">{t("alerts")}</h2>
+        <div className="settings-alert-options mt-2 divide-y divide-slate-200">
+          <Toggle label={t("sound")} checked={settings.sound} onChange={(v) => setToggle("sound", v)} />
+          <Toggle label={t("vibration")} checked={settings.vibration} onChange={(v) => setToggle("vibration", v)} />
+          <Toggle label={t("cover")} desc={t("coverDesc")} checked={settings.cover} onChange={(v) => setToggle("cover", v)} />
+        </div>
+      </section>
+
+      <section className="settings-panel settings-language rounded-2xl bg-white p-4 shadow-sm" aria-labelledby="settings-language-title">
+        <h2 className="settings-panel-title" id="settings-language-title">{t("language")}</h2>
+        <div className="grid grid-cols-2 gap-2">
           {[["en", "English"], ["fil", "Filipino"]].map(([code, name]) => (
             <button key={code} onClick={() => setLang(code)} aria-pressed={settings.lang === code}
               className={`min-h-12 rounded-xl border-2 text-lg font-semibold focus-visible:outline-4 focus-visible:outline-blue-600 ${
@@ -70,7 +75,7 @@ export default function SettingsView({ settings, update, notify, location, onLoc
             </button>
           ))}
         </div>
-      </fieldset>
+      </section>
     </div>
   );
 }

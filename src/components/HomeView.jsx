@@ -33,7 +33,6 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
 
   return (
     <div className="space-y-4">
-      <div className="monitoring-mode-heading"><span className="section-kicker">01 · MONITORING DASHBOARD</span><span className="synthetic-feed-label">SYNTHETIC SENSOR FEED</span></div>
       {/* Visibility of system status: always say whether the unit is talking to us. */}
       <p className={`flex items-center gap-2 text-base font-semibold ${online ? "text-slate-700" : "text-slate-900"}`}>
         {online ? <Wifi aria-hidden="true" className="h-5 w-5" /> : <WifiOff aria-hidden="true" className="h-5 w-5" />}
@@ -41,7 +40,7 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
       </p>
 
       <StatusCard level={level} probability={probability} thresholds={THRESHOLDS[settings.sensitivity]}
-        cooling={device.cooling} onAck={ack} onSnooze={snooze} />
+        modelReady={device.modelReady !== false} cooling={device.cooling} onAck={ack} onSnooze={snooze} />
 
       {(level === "watch" || level === "warning") && device.drivers?.length > 0 && (
         <p className="rounded-2xl bg-white p-4 text-base text-slate-700 shadow-sm">

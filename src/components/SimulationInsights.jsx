@@ -1,5 +1,5 @@
 import {useEffect,useMemo,useState} from "react";
-import {Activity,CalendarDays,CloudRain,Compass,Info} from "lucide-react";
+import {CalendarDays,CloudRain,Compass,Info} from "lucide-react";
 
 const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
 function seasonFor(month){if(month>=6&&month<=10)return "Southwest monsoon / wet season";if(month===11||month===12||month<=2)return "Northeast monsoon / dry season";return "Hot dry-to-wet transition";}
@@ -25,7 +25,12 @@ export default function SimulationInsights({scenario,location}){
 const scenarioText={natural:"Baseline conditions are evolving naturally in the simulator.",sunny:"A clear and mostly dry weather pattern is being simulated.",cloud_build:"Cloud cover and humidity are building; showers may develop in this scenario.",shower:"A passing shower is being simulated.",thunderstorm:"A thunderstorm scenario is active, with a strong simulated pre-rain signal.",habagat:"A southwest-monsoon rain-band scenario is active.",false_warning:"Cloudy and humid conditions are simulated without rain onset.",cool_evening:"A cooler, mostly dry evening pattern is being simulated.",rain_now:"Rain is already occurring in this simulated scenario.",typhoon_approach:"SIMULATED TYPHOON-APPROACH SCENARIO: sustained rain and pressure changes are being generated. This is not a real storm advisory.",el_nino_dry:"EL NIÑO DRY ANALOGUE: a deliberately drier synthetic pattern, not a report of current ENSO conditions.",la_nina_wet:"LA NIÑA WET ANALOGUE: a deliberately wetter synthetic pattern, not a report of current ENSO conditions.",habagat_surge:"A stronger, prolonged southwest-monsoon rain-band scenario is being simulated.",flash_shower:"A sudden, short-duration intense shower is being simulated.",offline:"Sensor connectivity is locally simulated as offline."};
  const forecast= scenarioText[scenario]||scenarioText.natural;
  return <section className="simulation-insights">
-  <div className="section-head"><div><span className="section-kicker"><Activity size={14}/> 03 · WEATHER CONTEXT · SIMULATED</span><h2>Weather context</h2><p>Supporting context only: calendar-based seasonal heuristics and the currently selected synthetic scenario. No live forecast or official climate bulletin is connected.</p></div><span className="data-pill">SYNTHETIC DATA</span></div>
+  <div className="section-head weather-overview-heading">
+   <div>
+    <h2>Weather overview</h2>
+    <p>Summaries are calculated from the simulator's generated history, not live observations.</p>
+   </div>
+  </div>
   <div className="weather-context-grid">
    <article className="context-card"><div className="context-icon"><CalendarDays/></div><small>Simulated seasonal calendar</small><b>{season}</b><span>{MONTHS[calendarNow.getMonth()]} · calendar-based Philippines heuristic</span></article>
    <article className="context-card"><div className="context-icon"><Compass/></div><small>ENSO context</small><b>{scenario==="el_nino_dry"?"El Niño analogue":scenario==="la_nina_wet"?"La Niña analogue":"Not verified"}</b><span>Not a verified current ENSO phase</span></article>

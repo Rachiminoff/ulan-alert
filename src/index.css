@@ -95,9 +95,9 @@ html{overflow-x:hidden}
 @media(min-width:760px){
   .content{max-width:1180px}
   .topbar{box-shadow:0 1px 0 rgba(0,0,0,.12)}
-  .settings-stack{grid-template-columns:minmax(280px,1fr) minmax(280px,1fr);align-items:start}
+  .settings-stack{grid-template-columns:minmax(280px,1fr) minmax(280px,1fr);align-items:stretch}
   .settings-stack>.location-card{grid-column:1/-1}
-  .settings-stack fieldset:last-child{grid-column:1/-1}
+  .settings-stack>.settings-language{grid-column:1/-1}
   .history-page{display:grid;grid-template-columns:minmax(260px,.7fr) minmax(420px,1.3fr);align-items:start}
   .history-page>[role="tablist"]{grid-column:1/-1}
   .history-page>section:nth-of-type(1){grid-column:1}
@@ -132,13 +132,14 @@ html{overflow-x:hidden}
 .topbar-actions{display:flex;align-items:center;gap:12px;min-width:0}
 .research-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:0 13px;border:1px solid #6268a8;background:#34385d;color:#f4f5ff;font-size:12px;font-weight:800;white-space:nowrap}
 .research-trigger:hover{background:#454b7c}
-.simulation-insights{display:grid;gap:14px;margin-top:4px}
+.simulation-insights{display:grid;gap:14px;margin-top:4px;padding:20px}
 .section-head,.summary-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .section-head h2{margin:4px 0;font-size:20px}.section-head p,.summary-heading p{margin:3px 0 0;color:var(--muted)!important;font-size:12px;line-height:1.5}
+.weather-overview-heading{align-items:flex-start!important}.weather-overview-heading>div{min-width:0}.weather-overview-heading h2{margin:0 0 6px!important;font-size:26px!important;line-height:1.2!important}.weather-overview-heading p{margin:0!important;max-width:72ch}
 .section-kicker{display:flex;align-items:center;gap:6px;color:#9ba8ff;font-size:10px;font-weight:900;letter-spacing:.09em}
 .data-pill,.sample-count{align-self:center;padding:5px 8px;border:1px solid #4b527d;border-radius:5px;color:#b9c3ff;font-size:9px;font-weight:900;letter-spacing:.08em;white-space:nowrap}
 .weather-context-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.context-card{display:flex;flex-direction:column;align-items:flex-start;gap:7px;padding:14px;background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:8px;min-width:0}
+.context-card{display:flex;flex-direction:column;align-items:flex-start;gap:9px;padding:18px;background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:8px;min-width:0}
 .context-icon{display:grid;place-items:center;width:32px;height:32px;border-radius:7px;background:#34385d;color:#b9c3ff}.context-icon svg{width:17px;height:17px}
 .context-card small{font-size:10px;color:var(--muted)}.context-card>b{font-size:14px;line-height:1.35}.context-card>span{font-size:11px;line-height:1.5;color:var(--muted)}
 .forecast-card{border-color:#535b8d!important}.history-summary,.dashboard-trends{padding:15px;background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:8px;min-width:0}
@@ -152,6 +153,7 @@ html{overflow-x:hidden}
 .fac-modal .fac-body{overflow-y:auto;padding:16px 20px 22px}.fac-modal .fac-intro{color:#c4c7d0!important}.fac-modal .fac-section{background:#25272f!important;border-color:#444751!important;border-radius:9px!important}.fac-modal .fac-scenarios button{min-height:76px;padding:10px;background:#30323b;border:1px solid #4a4d58;color:#f2f3f5}.fac-modal .fac-scenarios button.selected{background:#343a62;border-color:#7b86d9;box-shadow:inset 0 0 0 1px #7b86d9}.fac-modal .fac-controls button{border:1px solid #555a70;background:#34384d;color:#f3f4ff;padding:9px 12px}.fac-modal .fac-controls button:disabled{opacity:.55;cursor:wait}
 .tech-stack-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.tech-stack-grid article{display:flex;align-items:center;gap:12px;padding:13px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;min-width:0}.tech-stack-grid article>svg{width:22px;height:22px;flex:none;color:#aab4ff}.tech-stack-grid article div{display:flex;flex-direction:column;gap:4px;min-width:0}.tech-stack-grid b{font-size:13px}.tech-stack-grid small{font-size:11px;color:var(--muted);line-height:1.45}
 @media(max-width:760px){.topbar-actions{gap:7px}.research-trigger{width:40px;padding:0}.research-trigger span{display:none}.status-chip{font-size:9px}.weather-context-grid{grid-template-columns:1fr}.context-card{display:grid;grid-template-columns:34px 1fr;column-gap:10px;align-items:center}.context-card .context-icon{grid-row:1/4}.context-card small,.context-card>b,.context-card>span{grid-column:2}.summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.dashboard-chart-grid{grid-template-columns:1fr}.fac-modal-backdrop{padding:0;align-items:stretch}.fac-modal{width:100%;height:100%;max-height:100vh;border-radius:0!important}.fac-modal .fac-body{padding:12px}.fac-modal-header{padding:14px}.fac-modal .fac-scenarios{grid-template-columns:repeat(2,minmax(0,1fr))!important}.tech-stack-grid{grid-template-columns:1fr}.range-switch{width:100%;justify-content:space-between}.range-switch button{flex:1}}
+@media(max-width:760px){.simulation-insights{padding:14px}}
 @media(prefers-reduced-motion:reduce){.fac-modal-backdrop{backdrop-filter:none}}
 
 /* Layout safeguards: prevent a blank-looking viewport and keep the dashboard flow anchored. */
@@ -192,8 +194,44 @@ body{min-height:100vh;background:#313338}
 @media(max-width:600px){.clothesline-panel{padding:12px}.clothesline-scene>svg{min-height:120px}.scene-caption{font-size:9px;left:8px;right:auto}.clothesline-controls{align-items:stretch}.cover-toggle-button{width:100%}}
 @media(prefers-reduced-motion:reduce){.retractable-cover,.scene-sun{transition:none}.hanging-laundry{animation:none}}
 
-/* Make the three product layers explicit while keeping the app simulation-only. */
-.simulation-mode-chip{display:inline-flex;align-items:center;min-height:28px;padding:0 9px;border:1px solid #59618f;border-radius:99px;background:#303653;color:#c6ceff;font-size:9px;font-weight:900;letter-spacing:.08em;white-space:nowrap}
+/* Make the three product layers explicit. */
 .monitoring-mode-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:2px 0 -4px}
 .synthetic-feed-label{color:#aeb6c7;font-size:9px;font-weight:850;letter-spacing:.08em}
-@media(max-width:760px){.simulation-mode-chip{display:none}}
+
+/* Keep dense pages inside the available content width. */
+.history-page .overflow-x-auto{max-width:100%;overflow-x:auto!important;overscroll-behavior-x:contain}
+.history-page table{width:100%;min-width:0;table-layout:fixed}
+@media(min-width:760px) and (max-width:979px){
+  .history-page{grid-template-columns:minmax(0,1fr)!important}
+  .history-page>section:nth-of-type(1),.history-page>section:nth-of-type(2){grid-column:1}
+}
+@media(min-width:760px) and (max-width:850px){
+  .settings-stack{grid-template-columns:minmax(0,1fr)!important}
+}
+.settings-switch-input{
+  appearance:none;
+  width:42px!important;
+  height:24px!important;
+  flex:none;
+  margin:0;
+  border:1px solid #6b6d78;
+  border-radius:999px;
+  background-color:#404249;
+  background-image:radial-gradient(circle,#e5e7eb 0 7px,transparent 7.5px);
+  background-repeat:no-repeat;
+  background-position:2px center;
+  transition:background-color .15s ease,border-color .15s ease,background-position .15s ease;
+}
+.settings-sensitivity-options{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:8px}
+.settings-sensitivity-options>label{align-items:center;min-height:80px}
+.settings-panel-title{margin:0 0 14px!important;font-size:18px!important;line-height:1.3}
+.settings-choice-group{width:100%;min-width:0;margin:0;padding:0;border:0!important;background:transparent!important}
+.settings-alerts{display:flex;flex-direction:column}
+.settings-alert-options{display:flex;flex:1;flex-direction:column}
+.settings-alert-options>label{flex:1}
+.settings-switch-input:checked{
+  border-color:#8790ff;
+  background-color:#5865f2;
+  background-position:calc(100% - 2px) center;
+}
+@media(prefers-reduced-motion:reduce){.settings-switch-input{transition:none}}

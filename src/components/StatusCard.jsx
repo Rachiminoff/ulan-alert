@@ -10,19 +10,19 @@ const LEVELS = {
   offline: { icon: WifiOff,      box: "bg-slate-200 border-slate-600 border-dashed text-slate-900", icoc: "text-slate-700", bar: "bg-slate-400" },
 };
 
-export default function StatusCard({ level, probability, thresholds, onAck, onSnooze, cooling }) {
+export default function StatusCard({ level, probability, thresholds, onAck, onSnooze, cooling, modelReady = true }) {
   const { t } = useLang();
   const c = LEVELS[level];
   const Icon = c.icon;
-  const showMeter = level === "safe" || level === "watch" || level === "warning";
+  const showMeter = modelReady && (level === "safe" || level === "watch" || level === "warning");
   const pct = Math.round(probability * 100);
   return (
     <section aria-labelledby="status-title" className={`rounded-3xl border-4 p-5 ${c.box}`}>
       <div className="flex items-start gap-4">
         <Icon aria-hidden="true" className={`mt-1 h-12 w-12 shrink-0 ${c.icoc}`} strokeWidth={2.2} />
         <div>
-          <h2 id="status-title" className="text-2xl font-extrabold leading-tight">{t(`${level}Title`)}</h2>
-          <p className="mt-1 text-lg">{t(`${level}Body`)}</p>
+          <h2 id="status-title" className="text-2xl font-extrabold leading-tight">{modelReady ? t(`${level}Title`) : "Preparing rain prediction"}</h2>
+          <p className="mt-1 text-lg">{modelReady ? t(`${level}Body`) : "The simulation is running, but the prediction model is not ready yet. A 0% reading is not being assumed."}</p>
         </div>
       </div>
 

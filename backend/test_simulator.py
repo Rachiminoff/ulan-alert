@@ -40,12 +40,38 @@ class SimulatorTests(unittest.TestCase):
         self.assertEqual(sum(r.raining for r in rows), 0)
         self.assertGreater(max(r.humidity_pct for r in rows) - rows[0].humidity_pct, 3)
 
-    def test_shower_preset_rains_after_a_visible_approach(self):
+    def test_shower_preset_rains_inside_the_warning_horizon(self):
         s = SyntheticWeather(seed=9, scenario="shower", start=datetime(2026, 2, 1, 12, 0))
         rows = [s.step() for _ in range(120)]
         first = next(i for i, r in enumerate(rows) if r.raining)
-        self.assertGreater(first, 15)                                   # precursors come first
-        self.assertLess(rows[first - 1].pressure_hpa, rows[0].pressure_hpa - 0.4)
+        self.assertLessEqual(first + 1, 30)
+        self.assertGreater(rows[first - 1].humidity_pct, rows[0].humidity_pct + 2)
+
+    def test_rain_scenarios_target_the_30_minute_prediction_horizon(self):
+        # A scenario should demonstrate an approaching rain event within the
+        # classifier's stated horizon, rather than starting rain an hour later.
+        for name in ("cloud_build", "shower", "thunderstorm", "habagat",
+                     "typhoon_approach", "la_nina_wet", "habagat_surge", "flash_shower"):
+            with self.subTest(scenario=name):
+                sim = SyntheticWeather(seed=17, scenario=name, start=datetime(2026, 2, 1, 12, 0))
+                system = sim.systems[-1]
+                self.assertTrue(system.rains)
+                self.assertGreater(system.lead, 0)
+                self.assertLessEqual(system.lead, 30)
+                self.assertTrue(any(row.raining for row in (sim.step() for _ in range(30))))
+
+    def test_selected_rain_scenario_shows_precursors_immediately(self):
+        scenarios = ("cloud_build", "shower", "thunderstorm", "habagat",
+                     "typhoon_approach", "la_nina_wet", "habagat_surge", "flash_shower")
+        for name in scenarios:
+            with self.subTest(scenario=name):
+                sim = SyntheticWeather(seed=73, scenario="natural", start=datetime(2026, 2, 1, 12, 0))
+                history = [sim.step() for _ in range(HISTORY + 40)]
+                previous = history[-1]
+                sim.set_scenario(name)
+                current = sim.step()
+                self.assertLess(current.pressure_hpa, previous.pressure_hpa - 0.5)
+                self.assertGreater(current.humidity_pct, previous.humidity_pct + 3)
 
     def test_precursors_exist_before_natural_rain_onsets(self):
         rows = run(11, 8, 30)

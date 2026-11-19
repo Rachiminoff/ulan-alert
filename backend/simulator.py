@@ -154,6 +154,20 @@ class SyntheticWeather:
         self.systems.append(sysm)
         return sysm
 
+    def _start_preset_system(self, kind, lead, strength, dur, rains=True):
+        elapsed = max(1, int(lead * 0.65))
+        system = self._new_system(kind, lead=lead, strength=strength, rains=rains, dur=dur,
+                                  n0=self.n - elapsed)
+        envelope = (elapsed / lead) ** 1.4
+        self.sys_p = -system.amp_p * envelope
+        self.sys_cloud = max(self.sys_cloud, (0.35 + 0.6 * system.strength) * envelope ** 0.8)
+        self.sys_h = system.amp_h * envelope
+        tau = self.n - system.onset
+        if system.outflow and tau > -14:
+            ramp = min(1.0, (tau + 14) / 14.0)
+            self.sys_t = -system.outflow * ramp
+        return system
+
     def _arrival_rate_per_min(self):
         month, hour = self.t.month, self.t.hour + self.t.minute / 60
         w = month_wetness(month, self.latitude, self.longitude)
@@ -175,14 +189,20 @@ class SyntheticWeather:
             elif scenario == "natural":
                 keep.append(s)
         self.systems = keep
+        # Rain-producing demonstration presets deliberately place onset inside the
+        # model's 30-minute prediction horizon. Earlier presets used 45–180 minute
+        # lead times, so a correct 30-minute classifier could legitimately return
+        # a low probability even while the scenario name suggested imminent rain.
+        # Stronger precursor signals make these controlled scenarios observable,
+        # while the probability itself still comes only from model inference.
         if scenario == "cloud_build":
-            self._new_system("convective", lead=60, strength=0.55, dur=30)
+            self._start_preset_system("convective", lead=22, strength=0.88, dur=30)
         elif scenario == "shower":
-            self._new_system("convective", lead=45, strength=0.55, rains=True, dur=28)
+            self._start_preset_system("convective", lead=18, strength=0.78, dur=28)
         elif scenario == "thunderstorm":
-            self._new_system("convective", lead=55, strength=0.95, rains=True, dur=55)
+            self._start_preset_system("convective", lead=20, strength=0.98, dur=55)
         elif scenario == "habagat":
-            self._new_system("frontal", lead=120, strength=0.75, rains=True, dur=300)
+            self._start_preset_system("frontal", lead=25, strength=0.90, dur=300)
         elif scenario == "false_warning":
             self._new_system("convective", lead=55, strength=0.7, rains=False, dur=40)
         elif scenario == "rain_now":
@@ -191,14 +211,14 @@ class SyntheticWeather:
             self.sys_p, self.sys_cloud, self.sys_h = -s.amp_p, 0.9, s.amp_h
         elif scenario == "typhoon_approach":
             # Synthetic, exaggerated long-duration cyclone-like pressure/humidity signal.
-            self._new_system("frontal", lead=180, strength=1.0, rains=True, dur=600)
+            self._start_preset_system("frontal", lead=28, strength=1.0, dur=600)
         elif scenario == "la_nina_wet":
             # A wet-climate analogue, not a statement about the current ENSO phase.
-            self._new_system("frontal", lead=90, strength=0.85, rains=True, dur=240)
+            self._start_preset_system("frontal", lead=25, strength=0.92, dur=240)
         elif scenario == "habagat_surge":
-            self._new_system("frontal", lead=100, strength=0.9, rains=True, dur=420)
+            self._start_preset_system("frontal", lead=22, strength=0.98, dur=420)
         elif scenario == "flash_shower":
-            self._new_system("convective", lead=20, strength=0.8, rains=True, dur=18)   # already under the system
+            self._start_preset_system("convective", lead=14, strength=0.88, dur=18)
 
     # --------------------------------------------------------------------- step
     def step(self) -> WeatherState:

@@ -190,6 +190,7 @@ def change_scenario(payload: dict):
     with lock:
         live.scenario = payload.get("scenario", "natural") if payload.get("scenario") in SCENARIOS else "natural"
         live.sim.set_scenario(live.scenario)
+        live._advance(1)
     return {"scenario": live.scenario, "ok": True}
 
 
