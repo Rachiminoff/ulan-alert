@@ -1,182 +1,288 @@
+"""Ulan Alert API (simulation only).
+
+Changes vs. the first version:
+  * GET endpoints are pure. A background task advances the simulation, so extra browser tabs no longer
+    speed it up and /api/status can't change state.
+  * Features come from features.compute_features(), the same code used in training (no train/serve skew).
+  * The trained model + metrics are cached on disk; first start trains in a background thread while the API
+    reports model_ready=false.
+  * Every simulated minute gets a probability, so alert behaviour can be verified live (/api/ml/live).
+  * /api/status returns the top drivers behind the current probability (occlusion explanation).
+"""
 from __future__ import annotations
+
+import asyncio
+import json
+import os
+import threading
 from collections import deque
-from datetime import datetime, timedelta
-from typing import Optional
-import random, math
+from contextlib import asynccontextmanager
+from datetime import datetime
+from functools import lru_cache
+from pathlib import Path
+
+import joblib
 import numpy as np
 import pandas as pd
+import sklearn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import precision_score, recall_score, f1_score, average_precision_score, accuracy_score, confusion_matrix, brier_score_loss
-from sklearn.model_selection import TimeSeriesSplit
-from simulator import SyntheticWeather, SCENARIOS
 
-app = FastAPI(title="Ulan Alert Synthetic Simulation", version="1.0.0")
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], allow_methods=["*"], allow_headers=["*"])
-FEATURES = ["pressure_delta_30m","pressure_delta_1h","pressure_delta_3h","humidity","humidity_delta_30m","temp_delta_30m","temp_residual","light_ratio","hour_sin","hour_cos"]
-WINDOW = 30
-rows: deque = deque(maxlen=20000)
-model_store: dict = {}
-metrics_store: dict = {}
-current_sim = SyntheticWeather(seed=73)
-last_prediction = 0.0
-last_raining = False
-speed = 1
-running = True
-scenario_key = "natural"
-current_location = {"name":"Indang, Cavite, Philippines","latitude":14.1953,"longitude":120.8769,"source":"default"}
+import ml
+from features import DEFINITIONS, FEATURES, HISTORY, compute_features
+from simulator import SCENARIOS, SyntheticWeather
 
-def row_of(s):
-    return {"timestamp":s.timestamp.isoformat(),"pressure":s.pressure_hpa,"temperature":s.temperature_c,"humidity":s.humidity_pct,"light":s.light_lux,"rain_mm":s.rain_mm,"raining":s.raining,"scenario":s.scenario}
+CACHE = Path(__file__).parent / ".cache" / "model.joblib"
+TICK_SECONDS = float(os.environ.get("ULAN_TICK_SECONDS", "2.0"))
+LIVE_MODEL = "Random Forest"
+MAX_ROWS = 20000
 
-def feature_row(history):
-    if len(history)<181: return None
-    a=list(history)
-    p=a[-1]["pressure"]
-    h=a[-1]["humidity"]
-    t=a[-1]["temperature"]
-    l=a[-1]["light"]
-    hour=datetime.fromisoformat(a[-1]["timestamp"]).hour + datetime.fromisoformat(a[-1]["timestamp"]).minute/60
-    # Deltas use current minus historical values. Light ratio compares current to rolling hour mean.
-    mean_light=np.mean([x["light"] for x in a[-60:]])
-    hourly_temp=26.0+2.4*math.sin(2*math.pi*(hour-8)/24)
-    return {"pressure_delta_30m":p-a[-31]["pressure"],"pressure_delta_1h":p-a[-61]["pressure"],"pressure_delta_3h":p-a[-181]["pressure"],
-            "humidity":h,"humidity_delta_30m":h-a[-31]["humidity"],"temp_delta_30m":t-a[-31]["temperature"],"temp_residual":t-hourly_temp,
-            "light_ratio":l/(mean_light+1),"hour_sin":math.sin(2*math.pi*hour/24),"hour_cos":math.cos(2*math.pi*hour/24)}
+lock = threading.RLock()
+store = {"models": None, "metrics": {}, "medians": None, "ready": False, "error": None, "training": False}
+DEFAULT_LOC = {"name": "Indang, Cavite, Philippines", "latitude": 14.1953, "longitude": 120.8769, "source": "default"}
 
-def create_synthetic_dataset(seed=2026, days=7, month=8):
-    # Generate two deterministic synthetic sequences; RNG controls variation within each pattern.
-    samples=[]
-    for seq_seed in range(seed, seed+4):
-        sequence_month = [2, 5, 8, 11][seq_seed-seed]
-        sim=SyntheticWeather(seed=seq_seed, start=datetime(2026,sequence_month,1,0,0))
-        hist=[]
-        for _ in range(days*24*60):
-            hist.append(row_of(sim.step()))
-        for i in range(181, len(hist)-30):
-            current=hist[i]
-            if current["raining"]: continue
-            prev30,prev60,prev180=hist[i-30],hist[i-60],hist[i-180]
-            hour=datetime.fromisoformat(current["timestamp"]).hour+datetime.fromisoformat(current["timestamp"]).minute/60
-            light_avg=sum(x["light"] for x in hist[i-59:i+1])/60
-            hourly_temp=26+2.4*math.sin(2*math.pi*(hour-8)/24)
-            f={"pressure_delta_30m":current["pressure"]-prev30["pressure"],"pressure_delta_1h":current["pressure"]-prev60["pressure"],
-               "pressure_delta_3h":current["pressure"]-prev180["pressure"],"humidity":current["humidity"],
-               "humidity_delta_30m":current["humidity"]-prev30["humidity"],"temp_delta_30m":current["temperature"]-prev30["temperature"],
-               "temp_residual":current["temperature"]-hourly_temp,"light_ratio":current["light"]/(light_avg+1),
-               "hour_sin":math.sin(2*math.pi*hour/24),"hour_cos":math.cos(2*math.pi*hour/24)}
-            label=int(any(x["raining"] for x in hist[i+1:i+31]))
-            samples.append((f,label,current["timestamp"]))
-    return samples
 
-def train_models():
-    global model_store, metrics_store
-    samples=create_synthetic_dataset()
-    X=np.array([[s[0][k] for k in FEATURES] for s in samples], dtype=float)
-    y=np.array([s[1] for s in samples], dtype=int)
-    # Chronological holdout and horizon gap. Synthetic sequences are generated in batches;
-    # order is kept and no random shuffle is used.
-    split=int(len(X)*0.70); gap=WINDOW
-    X_train,y_train=X[:max(0,split-gap)],y[:max(0,split-gap)]
-    X_test,y_test=X[split:],y[split:]
-    candidates={"Logistic Regression":LogisticRegression(class_weight="balanced",max_iter=600),
-               "Decision Tree":DecisionTreeClassifier(max_depth=7,min_samples_leaf=10,class_weight="balanced",random_state=42),
-               "Random Forest":RandomForestClassifier(n_estimators=70,max_depth=9,min_samples_leaf=5,class_weight="balanced_subsample",random_state=42,n_jobs=-1)}
-    model_store={}; metrics_store={}
-    for name,model in candidates.items():
-        model.fit(X_train,y_train)
-        prob=model.predict_proba(X_test)[:,1]
-        pred=prob>=0.60
-        cm=confusion_matrix(y_test,pred,labels=[0,1]).tolist()
-        metrics_store[name]={"precision":float(precision_score(y_test,pred,zero_division=0)),"recall":float(recall_score(y_test,pred,zero_division=0)),
-           "f1":float(f1_score(y_test,pred,zero_division=0)),"pr_auc":float(average_precision_score(y_test,prob)),"accuracy":float(accuracy_score(y_test,pred)),
-           "brier":float(brier_score_loss(y_test,prob)),"confusion_matrix":cm,"threshold":0.60}
-        model_store[name]=model
-    # Majority baseline and pressure-drop/humidity-rise heuristic.
-    prevalence=float(y_test.mean())
-    baseline_pred=np.zeros_like(y_test)
-    metrics_store["Majority baseline"]={"precision":0.0,"recall":0.0,"f1":0.0,"pr_auc":prevalence,"accuracy":float(accuracy_score(y_test,baseline_pred)),"brier":prevalence,"confusion_matrix":confusion_matrix(y_test,baseline_pred,labels=[0,1]).tolist(),"threshold":0.0}
-    rule_pred=((X_test[:,0]<-0.8)&(X_test[:,4]>2.0)&(X_test[:,3]>75)).astype(int)
-    metrics_store["Pressure/humidity rule"]={"precision":float(precision_score(y_test,rule_pred,zero_division=0)),"recall":float(recall_score(y_test,rule_pred,zero_division=0)),"f1":float(f1_score(y_test,rule_pred,zero_division=0)),"pr_auc":0.0,"accuracy":float(accuracy_score(y_test,rule_pred)),"brier":float(brier_score_loss(y_test,rule_pred.astype(float))),"confusion_matrix":confusion_matrix(y_test,rule_pred,labels=[0,1]).tolist(),"threshold":0.0}
-    metrics_store["meta"]={"rows":len(samples),"train_rows":len(X_train),"test_rows":len(X_test),"positive_rate_test":prevalence,"features":FEATURES,"seed":2026,"synthetic":True,"location":current_location["name"]}
-    # quick feature importance for RF
-    if "Random Forest" in model_store:
-        metrics_store["feature_importance"]=[{"feature":k,"importance":float(v)} for k,v in sorted(zip(FEATURES,model_store["Random Forest"].feature_importances_),key=lambda z:z[1],reverse=True)]
+class Live:
+    """Everything that changes while the simulation runs."""
+    def __init__(self):
+        self.seed, self.scenario, self.speed, self.running = 73, "natural", 1, True
+        self.location = dict(DEFAULT_LOC)
+        self.reset()
 
-train_models()
-# Seed enough simulated history so features are available immediately after startup.
-for _ in range(181): rows.append(row_of(current_sim.step()))
+    def reset(self, seed=None, scenario=None):
+        if seed is not None:
+            self.seed = int(seed)
+        if scenario is not None:
+            self.scenario = scenario if scenario in SCENARIOS else "natural"
+        self.sim = SyntheticWeather(seed=self.seed, scenario=self.scenario, latitude=self.location["latitude"],
+                                    longitude=self.location["longitude"])
+        self.rows: deque = deque(maxlen=MAX_ROWS)
+        self.probs: deque = deque(maxlen=MAX_ROWS)
+        self.last_features = None
+        self.drivers: list = []
+        self._advance(HISTORY + 59)       # warm-up so every feature is defined immediately
 
-def tick():
-    global last_prediction,last_raining
-    for _ in range(max(1,speed)):
-        rows.append(row_of(current_sim.step()))
-    f=feature_row(list(rows))
-    if f is not None:
-        x=np.array([[f[k] for k in FEATURES]])
-        last_prediction=float(model_store["Random Forest"].predict_proba(x)[0][1])
-    last_raining=bool(rows[-1]["raining"])
+    # ------------------------------------------------------------------
+    def _advance(self, k: int):
+        for _ in range(k):
+            s = self.sim.step()
+            self.rows.append({"timestamp": s.timestamp.isoformat(), "pressure": s.pressure_hpa, "temperature": s.temperature_c,
+                              "humidity": s.humidity_pct, "light": s.light_lux, "rain_mm": s.rain_mm, "raining": s.raining,
+                              "scenario": s.scenario})
+        # probabilities for the k new minutes (vectorised)
+        need = min(len(self.rows), HISTORY + k)
+        df = pd.DataFrame(list(self.rows)[-need:])
+        F = compute_features(df)
+        newF = F.iloc[-k:]
+        p = np.full(k, np.nan)
+        ok = ~newF.isna().any(axis=1).to_numpy()
+        models = store["models"]
+        if models is not None and ok.any():
+            p[ok] = models[LIVE_MODEL].predict_proba(newF.to_numpy(float)[ok])[:, 1]
+        for v in p:
+            self.probs.append(float(v))
+        # fill history for rows that predate the model (so live eval has something once the model arrives)
+        last = F.iloc[-1]
+        self.last_features = None if last.isna().any() else last.to_numpy(float)
+        self.drivers = []
+        if models is not None and self.last_features is not None and not np.isnan(p[-1]) and p[-1] > 0.1:
+            self.drivers = ml.explain(models[LIVE_MODEL], self.last_features, store["medians"])
 
-def status_dict():
-    if running: tick()
-    current=rows[-1]
-    return {"probability":last_prediction,"raining":last_raining,"online":True,"simulated":True,"scenario":scenario_key,"location":current_location["name"],
-       "timestamp":current["timestamp"],"pressureDelta3h":feature_row(list(rows)).get("pressure_delta_3h",0) if len(rows)>=181 else 0,
-       "readings":{"pressure":current["pressure"],"humidity":current["humidity"],"temperature":current["temperature"],"light":round(current["light"]/1000,1)},"rain_mm":current["rain_mm"],"speed":speed}
+    def tick(self):
+        if self.running:
+            self._advance(max(1, self.speed))
+
+
+live = Live()
+
+
+def _train_and_store():
+    with lock:
+        store["training"] = True
+    try:
+        models, metrics, medians = ml.train_all()
+        for m in models.values():                      # single-row inference: avoid thread-pool overhead
+            try:
+                m.model.set_params(n_jobs=1)
+            except Exception:
+                pass
+        CACHE.parent.mkdir(exist_ok=True)
+        joblib.dump({"sklearn": sklearn.__version__, "models": models, "metrics": metrics, "medians": medians}, CACHE)
+        with lock:
+            store.update(models=models, metrics=metrics, medians=medians, ready=True, error=None)
+            live.reset()
+    except Exception as e:                                # pragma: no cover
+        store["error"] = repr(e)
+    finally:
+        store["training"] = False
+
+
+def _load_or_train():
+    if CACHE.exists():
+        try:
+            blob = joblib.load(CACHE)
+            if blob.get("sklearn") == sklearn.__version__:
+                for m in blob["models"].values():
+                    try:
+                        m.model.set_params(n_jobs=1)
+                    except Exception:
+                        pass
+                with lock:
+                    store.update(models=blob["models"], metrics=blob["metrics"], medians=blob["medians"], ready=True)
+                    live.reset()
+                return
+        except Exception:
+            pass
+    _train_and_store()
+
+
+async def _ticker():
+    while True:
+        await asyncio.sleep(TICK_SECONDS)
+        with lock:
+            live.tick()
+
+
+@asynccontextmanager
+async def lifespan(app):
+    threading.Thread(target=_load_or_train, daemon=True).start()
+    task = asyncio.create_task(_ticker())
+    yield
+    task.cancel()
+
+
+app = FastAPI(title="Ulan Alert Synthetic Simulation", version="2.0.0", lifespan=lifespan)
+app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+                   allow_methods=["*"], allow_headers=["*"])
+
+
+def _status():
+    cur = live.rows[-1]
+    prob = live.probs[-1] if live.probs else float("nan")
+    recent = list(live.rows)[-31:]
+    f = live.last_features
+    return {
+        "probability": 0.0 if np.isnan(prob) else prob, "raining": bool(cur["raining"]),
+        "recently_wet": any(r["raining"] for r in recent), "online": True, "simulated": True,
+        "model_ready": store["ready"], "scenario": live.scenario, "location": live.location["name"],
+        "timestamp": cur["timestamp"], "pressureDelta3h": float(f[FEATURES.index("pressure_delta_3h")]) if f is not None else 0.0,
+        "readings": {"pressure": cur["pressure"], "humidity": cur["humidity"], "temperature": cur["temperature"],
+                     "light": round(cur["light"] / 1000, 1)},
+        "rain_mm": cur["rain_mm"], "speed": live.speed, "drivers": live.drivers,
+    }
+
 
 @app.get("/")
-def root(): return {"name":"Ulan Alert synthetic weather API","docs":"/docs","mode":"simulation-only"}
+def root():
+    return {"name": "Ulan Alert synthetic weather API", "docs": "/docs", "mode": "simulation-only", "model_ready": store["ready"]}
+
+
 @app.get("/api/status")
-def get_status(): return status_dict()
+def get_status():
+    with lock:
+        return _status()
+
+
 @app.post("/api/simulation/scenario")
-def change_scenario(payload:dict):
-    global scenario_key
-    scenario_key=payload.get("scenario","natural")
-    current_sim.set_scenario(scenario_key)
-    return {"scenario":scenario_key,"ok":True}
+def change_scenario(payload: dict):
+    with lock:
+        live.scenario = payload.get("scenario", "natural") if payload.get("scenario") in SCENARIOS else "natural"
+        live.sim.set_scenario(live.scenario)
+    return {"scenario": live.scenario, "ok": True}
+
+
 @app.post("/api/simulation/reset")
-def reset(payload:dict=None):
-    global current_sim,last_prediction,scenario_key,rows
-    seed=(payload or {}).get("seed",73)
-    scenario_key=(payload or {}).get("scenario","natural")
-    current_sim=SyntheticWeather(seed=seed,scenario=scenario_key,latitude=current_location["latitude"],longitude=current_location["longitude"])
-    rows=deque(maxlen=20000); last_prediction=0
-    for _ in range(181): rows.append(row_of(current_sim.step()))
-    return {"ok":True,"seed":seed,"scenario":scenario_key}
+def reset(payload: dict = None):
+    payload = payload or {}
+    with lock:
+        live.reset(seed=payload.get("seed", 73), scenario=payload.get("scenario", "natural"))
+    return {"ok": True, "seed": live.seed, "scenario": live.scenario}
+
+
 @app.post("/api/simulation/speed")
-def set_speed(payload:dict):
-    global speed
-    speed=int(max(1,min(60,payload.get("speed",1))))
-    return {"speed":speed}
+def set_speed(payload: dict):
+    with lock:
+        live.speed = int(max(1, min(60, payload.get("speed", 1))))
+    return {"speed": live.speed}
+
+
+@app.post("/api/simulation/pause")
+def pause(payload: dict):
+    with lock:
+        live.running = not bool(payload.get("paused", True))
+    return {"running": live.running}
+
+
 @app.get("/api/history")
-def history(limit:int=500): return {"items":list(rows)[-min(20000,max(1,limit)):],"synthetic":True}
-@app.get("/api/ml/metrics")
-def get_metrics(): return metrics_store
-@app.get("/api/ml/features")
-def get_features(): return {"features":FEATURES,"definitions":{"pressure_delta_30m":"Current pressure minus pressure 30 minutes ago","pressure_delta_1h":"Current pressure minus pressure 1 hour ago","pressure_delta_3h":"Current pressure minus pressure 3 hours ago","humidity":"Current relative humidity","humidity_delta_30m":"Humidity change over 30 minutes","temp_delta_30m":"Temperature change over 30 minutes","temp_residual":"Temperature minus synthetic diurnal expectation","light_ratio":"Current light divided by rolling 1-hour average","hour_sin":"Cyclic hour encoding sine","hour_cos":"Cyclic hour encoding cosine"}}
-@app.get("/api/ml/dataset")
-def dataset_preview(limit:int=100):
-    data=create_synthetic_dataset(seed=2026,days=5)
-    return {"synthetic":True,"columns":FEATURES+["rain_next_30min"],"rows":[{**f,"rain_next_30min":y,"timestamp":t} for f,y,t in data[-limit:]]}
-@app.post("/api/ml/train")
-def retrain():
-    train_models()
-    return {"ok":True,"metrics":metrics_store}
-@app.post("/api/location")
-def set_location(payload: dict):
-    global current_location, current_sim, rows, last_prediction, last_raining, scenario_key
-    name=str(payload.get("name", "Selected location"))[:120]
-    latitude=float(payload.get("latitude", 14.1953)); longitude=float(payload.get("longitude", 120.8769))
-    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
-        return {"ok":False,"message":"Coordinates are outside valid bounds"}
-    current_location={"name":name,"latitude":latitude,"longitude":longitude,"source":payload.get("source","manual")}
-    current_sim=SyntheticWeather(seed=73, scenario=scenario_key, latitude=latitude, longitude=longitude)
-    rows=deque(maxlen=20000); last_prediction=0.0; last_raining=False
-    for _ in range(181): rows.append(row_of(current_sim.step()))
-    return {"ok":True,"location":current_location}
+def history(limit: int = 500):
+    with lock:
+        rows = list(live.rows)[-min(MAX_ROWS, max(1, limit)):]
+        probs = list(live.probs)[-len(rows):]
+    items = [{**r, "probability": (None if np.isnan(p) else round(p, 4))} for r, p in zip(rows, probs)]
+    return {"items": items, "synthetic": True}
+
 
 @app.get("/api/simulation/scenarios")
-def scenarios(): return {"scenarios":[{"id":"natural","label":"Natural weather"},{"id":"sunny","label":"Sunny / dry"},{"id":"cloud_build","label":"Cloud buildup"},{"id":"shower","label":"Passing shower"},{"id":"rain_now","label":"Rain now"},{"id":"thunderstorm","label":"Thunderstorm"},{"id":"habagat","label":"Habagat rain"},{"id":"false_warning","label":"Humid / cloudy, no rain"},{"id":"cool_evening","label":"Cool evening"}]}
+def scenarios():
+    return {"scenarios": [{"id": "natural", "label": "Natural weather"}, {"id": "sunny", "label": "Sunny / dry"},
+                          {"id": "cloud_build", "label": "Cloud buildup"}, {"id": "shower", "label": "Passing shower"},
+                          {"id": "rain_now", "label": "Rain now"}, {"id": "thunderstorm", "label": "Thunderstorm"},
+                          {"id": "habagat", "label": "Habagat rain"}, {"id": "false_warning", "label": "Humid / cloudy, no rain"},
+                          {"id": "cool_evening", "label": "Cool evening"}]}
+
+
+@app.post("/api/location")
+def set_location(payload: dict):
+    name = str(payload.get("name", "Selected location"))[:120]
+    latitude = float(payload.get("latitude", 14.1953)); longitude = float(payload.get("longitude", 120.8769))
+    if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
+        return {"ok": False, "message": "Coordinates are outside valid bounds"}
+    with lock:
+        live.location = {"name": name, "latitude": latitude, "longitude": longitude, "source": payload.get("source", "manual")}
+        live.reset()
+        return {"ok": True, "location": live.location}
+
+
+# ------------------------------------------------------------------ ML endpoints
+@app.get("/api/ml/metrics")
+def get_metrics():
+    return {**store["metrics"], "model_ready": store["ready"], "training": store["training"], "error": store["error"]}
+
+
+@app.get("/api/ml/features")
+def get_features():
+    return {"features": FEATURES, "definitions": DEFINITIONS}
+
+
+@lru_cache(maxsize=1)
+def _preview():
+    seq = ml.build_sequences(n_seq=1, days=6)[0]
+    ix = np.flatnonzero(seq.valid)[::30]
+    rows = seq.X.iloc[ix].copy(); rows["rain_next_30min"] = seq.y[ix].astype(int)
+    rows["timestamp"] = seq.df["timestamp"].iloc[ix].astype(str).to_numpy()
+    return rows.round(4).to_dict("records")
+
+
+@app.get("/api/ml/dataset")
+def dataset_preview(limit: int = 100):
+    return {"synthetic": True, "columns": FEATURES + ["rain_next_30min"], "rows": _preview()[-limit:]}
+
+
+@app.post("/api/ml/train")
+def retrain():
+    if store["training"]:
+        return {"ok": False, "message": "Training already running", "metrics": store["metrics"]}
+    _train_and_store()
+    return {"ok": store["error"] is None, "metrics": store["metrics"], "error": store["error"]}
+
+
+@app.get("/api/ml/live")
+def live_eval(minutes: int = 1440):
+    """Verify the live model on what the running simulation has actually done (last N simulated minutes)."""
+    with lock:
+        n = min(len(live.rows), max(HISTORY, minutes))
+        wet = np.array([r["raining"] for r in list(live.rows)[-n:]], bool)
+        prob = np.array(list(live.probs)[-n:], float)
+    res = ml.alert_eval(prob, wet, ml.WARN_DEFAULT)
+    return {"window_minutes": n, "warn_threshold": ml.WARN_DEFAULT, **ml.merge_alert_evals([res]),
+            "note": "Computed on the running simulation's own history; small windows are noisy."}

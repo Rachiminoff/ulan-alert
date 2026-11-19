@@ -6,7 +6,7 @@
 - React + Vite (responsive web UI)
 - FastAPI (simulation/API)
 - Python: NumPy, pandas, scikit-learn
-- RNG-driven simulated weather sequences, seeded for reproducibility
+- Seeded, causal weather simulation (reproducible)
 
 ## Run it locally
 ### 1) Start Python backend
@@ -32,28 +32,29 @@ npm run dev
 Open http://localhost:5173. Vite proxies `/api` to the local Python server.
 
 ## How simulated weather records are created
-The simulator uses **pattern envelopes + random variation**. Patterns provide meteorological structure; random numbers vary each sequence and each minute, so a preset is not a fixed hard-coded reading table.
+Rain is produced by **weather systems with an approach phase**, so the sensors change *before* the rain starts (this is what the ML learns):
 
-1. **Season baseline:** month-by-month rainfall and average temperature profile approximated from published Indang, Cavite climate summaries. Source values differ between climate sources; these are simulation baselines, not ground truth.
-2. **Daily cycle:** smooth daylight curve drives light; temperature varies with a daily cycle.
-3. **Weather regime:** natural, sunny, cloud build-up, passing shower, thunderstorm, Habagat, false-warning (cloud/humidity without forced rain), cool evening, or rain-now presets alter latent cloud/moisture/rain tendency.
-4. **Randomness:** seeded Python `random` and NumPy RNG add sensor noise, regime fluctuations, pressure drift, localized rain bursts, event duration, rain intensity, and reading variation.
-5. **Virtual sensors:** pressure (hPa), temperature (°C), humidity (%RH), light (k-lux display; backend uses lux), and rain sensor (boolean/amount) are derived from the simulated weather state.
-6. **Target label:** `rain_next_30min = 1` if the simulated rain sensor becomes wet at any time in the following 30 minutes; currently-raining rows and rows without a complete 30-minute label window are excluded.
+1. **Systems:** convective cells (35-100 min approach, 12-65 min rain), Habagat/trough bands (80-200 min approach, 1.5-6 h rain) and *fizzling* systems that look threatening but never rain. Arrival rate follows the Indang monthly rainfall table and an afternoon convective peak.
+2. **Precursors:** pressure falls (with a gust-front bump at onset), humidity rises, cloud cover builds, light drops, and convective cells add a cold-outflow temperature drop just before rain. Strength is correlated with, but does not determine, whether it rains.
+3. **Nuisance variation that makes the task honest:** 1 hPa semidiurnal pressure tide, slow synoptic pressure drift, humidity/temperature drift, sensor noise.
+4. **Rain plate:** wet while raining and for 3 minutes after the last drop (dry-off delay).
+5. **Solar time:** timestamps are local clock time; solar time is derived from longitude relative to the time-zone meridian (the first version shifted the sun by ~8 hours).
+6. **Presets** (shower, thunderstorm, Habagat, cloud build-up, false warning, rain now) inject one system of that type into the same generator, so they are in-distribution for the model. "Sunny" and "cool evening" suppress new systems.
+7. **Target label:** `rain_next_30min = 1` if the plate becomes wet at any time in the next 30 minutes; rows where the plate is already wet are excluded.
 
-A fixed seed gives repeatable data for reproducibility. Resetting with another seed yields a different but structurally similar sequence.
+## Python ML methodology
+- **One feature function** (`features.py`) is used by training and live inference; a test proves live-window features equal training features and that features never look at the future.
+- 15 trend features: pressure change at 10 min / 30 min / 1 h / 3 h, pressure acceleration and jitter, humidity and its 30-min change, temperature changes and deviation from the 3-h mean, light vs 1-h mean, clearness (light vs expected clear-sky light), hour sin/cos.
+- Models: Logistic Regression, Decision Tree, Random Forest (live model), Gradient Boosting. Baselines: majority class, hour-of-day climatology, and a pressure/humidity rule whose thresholds are grid-searched on training data only.
+- **Splits are by independent 30-day sequence** (18 sequences, 9 train / 4 validation / 5 test, covering dry and wet months). The validation split is used for isotonic **probability calibration** and threshold choice; the test split is used for reporting only.
+- **Row-level metrics:** PR-AUC, ROC-AUC, Brier score, precision/recall/F1 at the warning threshold, reliability bins, PR curve.
+- **Event-level metrics** replay the app's alert rule (warn threshold, 2 consecutive predictions, no alert during/just after rain): share of rain events warned at least 10 min ahead, median lead time, and false alarms per day. An **operating curve** shows how those trade off across thresholds.
+- Sensor-group **ablation** and permutation importance on the test set.
+- Live: every simulated minute gets a probability; `/api/status` returns the top drivers (occlusion explanation); `/api/ml/live` scores the running simulation's own history.
 
+Typical test-set results (see `/api/ml/metrics` for your run): Random Forest PR-AUC ~0.42 vs 0.02 base rate, ROC-AUC ~0.96; at warn threshold 0.40 it warns >=10 min ahead for ~2 in 3 rain events (median lead ~18 min) with ~0.4 false alarms/day, versus a tuned pressure/humidity rule that needs ~1.1 false alarms/day for a similar catch rate.
 
-## Python ML methodology (paper-aligned)
-- Binary event classification: rain onset in the next 30 minutes.
-- Inputs use trend features rather than directly using the rain sensor label: pressure deltas at 30 min / 1 h / 3 h, humidity and 30-min change, temperature change and daily-cycle residual, light divided by rolling 1-hour mean, cyclic hour sine/cosine.
-- Models: Logistic Regression, Decision Tree, Random Forest.
-- Baselines: majority class and a simple pressure-drop + humidity-rise rule.
-- Chronological 70/30 holdout with a 30-minute gap. The held-out set is never shuffled.
-- Metrics include rain-class precision, recall, F1, PR-AUC, accuracy (not the headline metric), Brier score, confusion matrix and Random Forest feature importance.
-- UI warning thresholds: Watch at 0.40, Warning at 0.60 by default; Warning needs two consecutive predictions; acknowledgment cooldown is 15 simulated minutes.
-
-**Important limitation:** these scores are measurements of the generated simulation records only. They must not be reported as field accuracy or as validated performance against real Indang weather. Synthetic patterns may encode correlations that differ from nature.
+**Important limitation:** these results measure how well the model recovers structure that the simulator was built to contain. They are not field accuracy and must not be reported as validation against real Indang weather.
 
 ## API
 - `GET /api/status` — live simulation and current ML probability
@@ -61,7 +62,9 @@ A fixed seed gives repeatable data for reproducibility. Resetting with another s
 - `GET /api/ml/metrics` — evaluation results + feature importance
 - `GET /api/ml/features` — feature definitions
 - `GET /api/ml/dataset` — simulated record preview
-- `POST /api/ml/train` — retrain model comparison
+- `POST /api/ml/train` — retrain (about 40 s); the model is cached in `backend/.cache`
+- `GET /api/ml/live` — event-level skill of the running simulation
+- `POST /api/simulation/pause` — pause/resume the simulation clock
 - `POST /api/simulation/scenario` — set weather scenario
 - `POST /api/simulation/reset` — reset seed/scenario
 - `POST /api/simulation/speed` — set simulation speed

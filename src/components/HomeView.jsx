@@ -40,6 +40,12 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
       <StatusCard level={level} probability={probability} thresholds={THRESHOLDS[settings.sensitivity]}
         cooling={device.cooling} onAck={ack} onSnooze={snooze} />
 
+      {(level === "watch" || level === "warning") && device.drivers?.length > 0 && (
+        <p className="rounded-2xl bg-white p-4 text-base text-slate-700 shadow-sm">
+          <b className="text-slate-900">Why: </b>{device.drivers.filter(d => d.effect > 0).map(d => d.driver.toLowerCase()).join(", ") || "several small changes together"}.
+        </p>
+      )}
+
       {settings.cover && (
         <section className="flex items-center justify-between rounded-2xl bg-white p-4 shadow-sm">
           <div>
