@@ -409,3 +409,61 @@ body{min-height:100vh;background:#313338}
 .pr-empty{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.pr-footnote{display:flex;align-items:flex-start;gap:6px;margin:10px 0 0;color:var(--muted);font-size:10px;line-height:1.5}.pr-footnote svg{flex:none;margin-top:1px}
 .full-moon-mode .prediction-reality{background:#050505!important;border-color:#242424!important}.full-moon-mode .pr-heading-icon{background:#111!important;color:#ddd!important}.full-moon-mode .pr-definition,.full-moon-mode .pr-metrics article,.full-moon-mode .pr-matrix-cell,.full-moon-mode .pr-record{background:#080808!important;border-color:#252525!important}.full-moon-mode .pr-heading h3,.full-moon-mode .pr-definition b,.full-moon-mode .pr-metrics b,.full-moon-mode .pr-matrix-cell>b,.full-moon-mode .pr-bool b,.full-moon-mode .pr-recent-heading{color:#eee!important}
 @media(max-width:700px){.pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.pr-matrix{grid-template-columns:repeat(2,minmax(0,1fr))}.pr-record{grid-template-columns:1fr auto;gap:6px}.pr-bool{grid-column:1/-1;grid-row:2}.pr-outcome{grid-column:2;grid-row:1}.pr-record-time{grid-column:1;grid-row:1}}
+
+/* Dashboard hierarchy: status leads; supporting information stays useful but quiet. */
+.content .weather-trivia.dashboard-trivia{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:10px;padding:11px 13px;background:#292b2f!important;border:1px solid #414349!important;border-left:3px solid #9b8952!important;border-radius:8px!important;color:var(--text)!important}
+.content .weather-trivia.dashboard-trivia .weather-trivia-heading{display:contents;margin:0}
+.content .weather-trivia.dashboard-trivia .weather-trivia-icon{width:30px;height:30px;background:#3a372c!important;color:#d9c47b!important}
+.content .weather-trivia.dashboard-trivia .weather-trivia-heading>div:nth-child(2){display:none}
+.content .weather-trivia.dashboard-trivia .weather-trivia-copy{padding:0;min-width:0}
+.content .weather-trivia.dashboard-trivia .weather-trivia-copy h4{margin:0 0 2px;font-size:12px;color:#e8dfc4!important}
+.content .weather-trivia.dashboard-trivia .weather-trivia-copy p{font-size:11px;line-height:1.45;color:#bfc2c8!important}
+.content .weather-trivia.dashboard-trivia .weather-trivia-next{width:30px;height:30px;background:#34332d!important;border-color:#5a5239;color:#d9c47b!important}
+.dashboard-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.dashboard-section-heading>div{min-width:0}
+.dashboard-section-heading h3{margin:2px 0 0;font-size:16px;font-weight:800;color:var(--white)}
+.dashboard-eyebrow{display:block;font-size:9px;line-height:1.4;font-weight:850;letter-spacing:.12em;color:#aeb3bd}
+.sensor-overview{padding:16px;background:var(--panel);border:1px solid var(--line);border-radius:9px;min-width:0}
+.sensor-live-state{font-size:9px;font-weight:900;letter-spacing:.1em;padding:5px 7px;border:1px solid #45484e;border-radius:4px;color:#c1c5cc}
+.sensor-live-state.is-live{color:#8fd6ad;border-color:#37664d;background:#1d3328}
+.sensor-live-state.is-offline{color:#e5b4a2;border-color:#69443c;background:#382522}
+.sensor-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0 0}
+.sensor-tile{min-width:0;padding:12px;background:#222428;border:1px solid #3b3e44;border-radius:7px}
+.sensor-tile dt{display:flex;align-items:center;gap:6px;color:#b9bec7;font-size:11px;font-weight:700}
+.sensor-tile dt svg{flex:none;color:#9ba8ff}
+.sensor-tile dd{margin:9px 0 2px;font-size:clamp(20px,2.5vw,27px);font-weight:850;line-height:1.1;letter-spacing:-.03em;color:#f3f4f6;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sensor-tile dd small{margin-left:4px;font-size:11px;font-weight:650;letter-spacing:0;color:#aeb3bd}
+.sensor-tile>span{display:block;margin-top:5px;font-size:10px;color:#9298a3;line-height:1.35}
+.sensor-context{display:flex;gap:8px;align-items:flex-start;margin-top:12px;padding-top:11px;border-top:1px solid #3a3d43;font-size:11px;line-height:1.5}
+.sensor-context b{flex:none;color:#c6cad2}.sensor-context span{color:#aeb3bd}
+.sensor-unavailable{margin:14px 0 0;font-size:12px;color:#b9bec7}
+.dashboard-explanation{padding:13px 15px;background:#302b22;border:1px solid #5a4c31;border-radius:8px}
+.dashboard-explanation .dashboard-section-heading{justify-content:flex-start;color:#e0c17b}
+.dashboard-explanation .dashboard-section-heading h3{font-size:13px;color:#ead9b2!important}
+.dashboard-explanation p{margin:7px 0 0 25px;font-size:12px;line-height:1.5;color:#d5c9ae!important}
+.research-disclosure{overflow:hidden;background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:8px!important}
+.research-disclosure>summary{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:70px;padding:13px 16px;cursor:pointer;list-style:none}
+.research-disclosure>summary::-webkit-details-marker{display:none}
+.research-disclosure>summary>span{display:grid;gap:3px;min-width:0}
+.research-disclosure>summary b{font-size:14px;color:#e8eaf0}
+.research-disclosure>summary small{font-size:11px;color:#aeb3bd}
+.research-disclosure[open]>summary{border-bottom:1px solid var(--line)}
+.research-disclosure[open]>summary>svg{transform:rotate(180deg)}
+.research-disclosure>.prediction-reality{margin:0;border:0!important;border-radius:0!important;background:transparent!important}
+.full-moon-mode .content .weather-trivia.dashboard-trivia{background:#080808!important;border-color:#292929!important;border-left-color:#76683e!important}
+.full-moon-mode .sensor-tile{background:#080808;border-color:#292929}
+.full-moon-mode .sensor-context{border-color:#292929}
+.full-moon-mode .research-disclosure{background:#050505!important;border-color:#242424!important}
+@media(max-width:700px){
+ .content .weather-trivia.dashboard-trivia{grid-template-columns:auto minmax(0,1fr) auto;padding:10px;gap:8px}
+ .content .weather-trivia.dashboard-trivia .weather-trivia-copy p{font-size:10px}
+ .sensor-overview{padding:13px}
+ .sensor-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .sensor-tile{padding:10px}
+ .sensor-tile dd{font-size:24px}
+ .sensor-context{display:grid;gap:3px}
+ .research-disclosure>summary{min-height:64px;padding:12px}
+}
+.content .weather-trivia.dashboard-trivia .weather-trivia-icon{grid-column:1;grid-row:1}
+.content .weather-trivia.dashboard-trivia .weather-trivia-copy{grid-column:2;grid-row:1}
+.content .weather-trivia.dashboard-trivia .weather-trivia-next{grid-column:3;grid-row:1}

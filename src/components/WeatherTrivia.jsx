@@ -41,7 +41,7 @@ export default function WeatherTrivia() {
   };
 
   return (
-    <section className="weather-trivia" aria-labelledby="weather-trivia-title">
+    <section className="weather-trivia dashboard-trivia" aria-labelledby="weather-trivia-title">
       <div className="weather-trivia-heading">
         <div className="weather-trivia-icon"><Lightbulb aria-hidden="true" /></div>
         <div><div className="weather-trivia-kicker">A QUICK WEATHER FACT</div><h3 id="weather-trivia-title">Did you know?</h3></div>

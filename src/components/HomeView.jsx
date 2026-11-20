@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronDown, ChevronUp, Wifi, WifiOff } from "lucide-react";
+import { Activity, Gauge, Droplets, Thermometer, Sun, Wifi, WifiOff, ChevronDown } from "lucide-react";
 import { useLang } from "../lang";
 import { THRESHOLDS } from "../useDevice";
 import { logEvent } from "../sessionLog";
@@ -16,14 +16,12 @@ function trend(t, v, up = 0.3) {
 
 export default function HomeView({ device, settings, notify, coverClosed, setCoverClosed }) {
   const { t } = useLang();
-  const [open, setOpen] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const { level, probability, readings, dP3, online, updatedAt } = device;
   const secs = Math.max(0, Math.round((Date.now() - updatedAt) / 1000));
 
   const ack = () => { logEvent("alert_acknowledged"); device.pauseAlerts(); notify(t("ackToast")); };
   const snooze = () => { logEvent("alert_snoozed"); device.pauseAlerts(); notify(t("snoozeToast")); };
-  const toggleDetails = () => { logEvent("details_toggled", open ? "hide" : "show"); setOpen(!open); };
   const doCover = () => {
     const next = !coverClosed;
     setCoverClosed(next); setConfirm(false);
@@ -41,58 +39,40 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
         {online ? t("connected", { n: secs }) : t("offlineChip")}
       </p>
 
-      {settings.showTrivia !== false && <WeatherTrivia />}
-
       <StatusCard level={level} probability={probability} thresholds={THRESHOLDS[settings.sensitivity]}
         modelReady={device.modelReady !== false} cooling={device.cooling} onAck={ack} onSnooze={snooze} />
 
+      {settings.showTrivia !== false && <WeatherTrivia />}
+
       {(level === "watch" || level === "warning") && device.drivers?.length > 0 && (
-        <p className="rounded-2xl bg-white p-4 text-base text-slate-700 shadow-sm">
-          <b className="text-slate-900">Why: </b>{device.drivers.filter(d => d.effect > 0).map(d => d.driver.toLowerCase()).join(", ") || "several small changes together"}.
-        </p>
+        <section className="dashboard-explanation" aria-label="Reason for current warning">
+          <div className="dashboard-section-heading"><Activity size={17}/><h3>What is driving this reading?</h3></div>
+          <p>{device.drivers.filter(d => d.effect > 0).map(d => d.driver.toLowerCase()).join(", ") || "Several small changes together"}.</p>
+        </section>
       )}
 
-      {settings.cover && (
-        <ClotheslineVisualizer
-          closed={coverClosed}
-          onToggle={() => setConfirm(true)}
-        />
-      )}
-
-      {/* Minimalism: sensor numbers are one tap away, not on the main screen. */}
-      <section className="rounded-2xl bg-white p-4 shadow-sm">
-        <button onClick={toggleDetails} aria-expanded={open}
-          className="flex min-h-12 w-full items-center justify-between text-left text-lg font-semibold text-slate-900 focus-visible:outline-4 focus-visible:outline-blue-600">
-          {open ? t("hideDetails") : t("details")}
-          {open ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
-        </button>
-        {open && (
-          <div className="mt-3 space-y-4">
-            <div>
-              <h4 className="font-bold text-slate-900">{t("why")}</h4>
-              <p className="text-base text-slate-700">{t(whyKey)}</p>
-            </div>
-            {online && (
-              <dl className="grid grid-cols-2 gap-3 text-base">
-                {[
-                  [t("pressure"), `${readings.pressure} hPa`, trend(t, dP3)],
-                  [t("humidity"), `${readings.humidity}%`, null],
-                  [t("temperature"), `${readings.temperature} °C`, null],
-                  [t("light"), `${readings.light}%`, null],
-                ].map(([k, v, tr]) => (
-                  <div key={k} className="rounded-xl bg-slate-100 p-3">
-                    <dt className="text-sm font-semibold text-slate-600">{k}</dt>
-                    <dd className="text-lg font-bold text-slate-900">{v}</dd>
-                    {tr && <dd className="text-sm text-slate-700">{tr}</dd>}
-                  </div>
-                ))}
-              </dl>
-            )}
-          </div>
-        )}
+      <section className="sensor-overview" aria-labelledby="sensor-overview-title">
+        <div className="dashboard-section-heading">
+          <div><span className="dashboard-eyebrow">LIVE MEASUREMENTS</span><h3 id="sensor-overview-title">Sensor readings</h3></div>
+          <span className={`sensor-live-state ${online ? "is-live" : "is-offline"}`}>{online ? "LIVE" : "OFFLINE"}</span>
+        </div>
+        {online ? <dl className="sensor-grid">
+          <div className="sensor-tile"><dt><Gauge size={16}/>{t("pressure")}</dt><dd>{readings.pressure}<small>hPa</small></dd><span>{trend(t, dP3)} · 3-point change</span></div>
+          <div className="sensor-tile"><dt><Droplets size={16}/>{t("humidity")}</dt><dd>{readings.humidity}<small>%</small></dd><span>Relative humidity</span></div>
+          <div className="sensor-tile"><dt><Thermometer size={16}/>{t("temperature")}</dt><dd>{readings.temperature}<small>°C</small></dd><span>Ambient temperature</span></div>
+          <div className="sensor-tile"><dt><Sun size={16}/>{t("light")}</dt><dd>{readings.light}<small>%</small></dd><span>Light intensity</span></div>
+        </dl> : <p className="sensor-unavailable">Sensor readings are unavailable while the device is offline.</p>}
+        <div className="sensor-context"><b>{t("why")}</b><span>{t(whyKey)}</span></div>
       </section>
 
-      <PredictionReality sensitivity={settings.sensitivity} />
+      {settings.cover && (
+        <ClotheslineVisualizer closed={coverClosed} onToggle={() => setConfirm(true)} />
+      )}
+
+      <details className="research-disclosure">
+        <summary><span><span className="dashboard-eyebrow">MODEL EVALUATION</span><b>Prediction versus reality</b><small>Accuracy, precision, recall and recent outcomes</small></span><ChevronDown size={19}/></summary>
+        <PredictionReality sensitivity={settings.sensitivity} />
+      </details>
 
       <SimulationInsights scenario={device.scenario} location={device.location}/>
 
