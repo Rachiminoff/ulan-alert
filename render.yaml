@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ulan-alert
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: ULAN_ENABLE_RETRAIN
+        value: "false"
+      - key: ULAN_TICK_SECONDS
+        value: "2.0"

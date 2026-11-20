@@ -25,7 +25,8 @@ import joblib
 import numpy as np
 import pandas as pd
 import sklearn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 
 import ml
@@ -36,6 +37,8 @@ CACHE = Path(__file__).parent / ".cache" / "model.joblib"
 TICK_SECONDS = float(os.environ.get("ULAN_TICK_SECONDS", "2.0"))
 LIVE_MODEL = "Random Forest"
 MAX_ROWS = 20000
+ENABLE_RETRAIN = os.environ.get("ULAN_ENABLE_RETRAIN", "true").strip().lower() in {"1", "true", "yes", "on"}
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "dist"
 
 lock = threading.RLock()
 store = {"models": None, "metrics": {}, "medians": None, "ready": False, "error": None, "training": False}
@@ -154,7 +157,10 @@ async def lifespan(app):
 
 
 app = FastAPI(title="Ulan Alert Synthetic Simulation", version="2.0.0", lifespan=lifespan)
-app.add_middleware(CORSMiddleware, allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+allowed_origins = [origin.strip() for origin in os.environ.get(
+    "ULAN_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+).split(",") if origin.strip()]
+app.add_middleware(CORSMiddleware, allow_origins=allowed_origins,
                    allow_methods=["*"], allow_headers=["*"])
 
 
@@ -174,9 +180,18 @@ def _status():
     }
 
 
-@app.get("/")
-def root():
-    return {"name": "Ulan Alert synthetic weather API", "docs": "/docs", "mode": "simulation-only", "model_ready": store["ready"]}
+@app.get("/healthz", include_in_schema=False)
+def healthcheck():
+    return {"ok": True, "model_ready": store["ready"]}
+
+
+@app.get("/", include_in_schema=False)
+def frontend_root():
+    index = FRONTEND_DIST / "index.html"
+    if index.is_file():
+        return FileResponse(index)
+    return {"name": "Ulan Alert synthetic weather API", "docs": "/docs", "mode": "simulation-only",
+            "model_ready": store["ready"], "frontend": "not built"}
 
 
 @app.get("/api/status")
@@ -256,6 +271,7 @@ def set_location(payload: dict):
 def get_metrics():
     with lock:
         return {**store["metrics"], "model_ready": store["ready"], "training": store["training"],
+                "retraining_enabled": ENABLE_RETRAIN,
                 "error": ("Training failed. The previous model, if available, remains active." if store["error"] else None)}
 
 
@@ -281,6 +297,8 @@ def dataset_preview(limit: int = 100):
 @app.post("/api/ml/train")
 def retrain():
     """Start an explicit retraining job without blocking the request thread."""
+    if not ENABLE_RETRAIN:
+        raise HTTPException(status_code=403, detail="Model retraining is disabled on this public demo.")
     with lock:
         if store["training"]:
             return {"ok": False, "training": True, "message": "Training already running", "metrics": store["metrics"]}
@@ -301,3 +319,18 @@ def live_eval(minutes: int = 1440):
     res = ml.alert_eval(prob, wet, ml.WARN_DEFAULT)
     return {"window_minutes": n, "warn_threshold": ml.WARN_DEFAULT, **ml.merge_alert_evals([res]),
             "note": "Computed on the running simulation's own history; small windows are noisy."}
+
+
+# Serve built Vite assets from the same origin as the API. Keep this catch-all
+# after every API route so /api, /docs, and /healthz retain their handlers.
+@app.get("/{asset_path:path}", include_in_schema=False)
+def frontend_assets(asset_path: str):
+    if asset_path == "api" or asset_path.startswith(("api/", "docs", "redoc", "openapi.json", "healthz")):
+        raise HTTPException(status_code=404, detail="Not found")
+    candidate = (FRONTEND_DIST / asset_path).resolve()
+    if FRONTEND_DIST.exists() and candidate.is_relative_to(FRONTEND_DIST.resolve()) and candidate.is_file():
+        return FileResponse(candidate)
+    index = FRONTEND_DIST / "index.html"
+    if index.is_file():
+        return FileResponse(index)
+    raise HTTPException(status_code=404, detail="Frontend build not found. Build the Vite app first.")

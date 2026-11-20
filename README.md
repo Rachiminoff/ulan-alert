@@ -8,6 +8,10 @@
 - Python: NumPy, pandas, scikit-learn
 - Seeded, causal weather simulation (reproducible)
 
+## Deploy publicly on Render
+
+The repository includes a single-service Docker deployment. Render builds the Vite frontend and serves it from FastAPI, so the public website and `/api/*` endpoints use one URL. Follow [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) to deploy the included `render.yaml` Blueprint. The public configuration disables anonymous model retraining while keeping the simulation controls available.
+
 ## Run it locally
 ### 1) Start Python backend
 Python 3.10+ recommended.
