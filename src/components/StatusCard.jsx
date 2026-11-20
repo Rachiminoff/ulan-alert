@@ -17,7 +17,7 @@ export default function StatusCard({ level, probability, thresholds, onAck, onSn
   const showMeter = modelReady && (level === "safe" || level === "watch" || level === "warning");
   const pct = Math.round(probability * 100);
   return (
-    <section aria-labelledby="status-title" className={`rounded-3xl border-4 p-5 ${c.box}`}>
+    <section aria-labelledby="status-title" className={`status-card rounded-3xl border-4 p-5 ${c.box}`}>
       <div className="flex items-start gap-4">
         <Icon aria-hidden="true" className={`mt-1 h-12 w-12 shrink-0 ${c.icoc}`} strokeWidth={2.2} />
         <div>

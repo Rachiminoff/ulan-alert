@@ -42,11 +42,6 @@ function Chart({ trace, thresholds, showModels }) {
   return (
     <svg className="mm-chart" viewBox={`0 0 ${W} ${H}`} role="img"
       aria-label="Rain probability over the last simulated hours, with warning thresholds and rain periods">
-      <defs>
-        <linearGradient id="mm-fill" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#8fa0ff" stopOpacity=".38" /><stop offset="1" stopColor="#8fa0ff" stopOpacity=".02" />
-        </linearGradient>
-      </defs>
       {grid.map((g) => (
         <g key={g}>
           <line x1={ML} x2={W - MR} y1={y(g)} y2={y(g)} className="mm-grid" />
@@ -72,7 +67,7 @@ function Chart({ trace, thresholds, showModels }) {
       ))}
       {showModels && <polyline points={line(trace.lr)} className="mm-line lr" />}
       {showModels && <polyline points={line(trace.gb)} className="mm-line gb" />}
-      <polygon points={area} fill="url(#mm-fill)" />
+      <polygon points={area} fill="#8fa0ff" fillOpacity=".16" />
       <polyline points={line(trace.rf)} className="mm-line rf" />
       {trace.events.map((e, i) => (
         <g key={`e${i}`}>

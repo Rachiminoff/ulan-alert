@@ -1,4 +1,5 @@
 import { useLang } from "../lang";
+import { Terminal } from "lucide-react";
 import { logEvent } from "../sessionLog";
 import LocationPicker from "./LocationPicker";
 
@@ -19,7 +20,7 @@ function Toggle({ label, desc, checked, onChange }) {
   );
 }
 
-export default function SettingsView({ settings, update, notify, location, onLocationChange }) {
+export default function SettingsView({ settings, update, notify, location, onLocationChange, onOpenTerminal, onToggleFullMoon }) {
   const { t } = useLang();
   const levels = ["low", "medium", "high"];
   const cap = { low: "sensLow", medium: "sensMedium", high: "sensHigh" };
@@ -62,6 +63,17 @@ export default function SettingsView({ settings, update, notify, location, onLoc
           <Toggle label={t("vibration")} checked={settings.vibration} onChange={(v) => setToggle("vibration", v)} />
           <Toggle label={t("cover")} desc={t("coverDesc")} checked={settings.cover} onChange={(v) => setToggle("cover", v)} />
         </div>
+      </section>
+
+      <section className="settings-panel settings-appearance rounded-2xl bg-white p-4 shadow-sm" aria-labelledby="settings-appearance-title">
+        <h2 className="settings-panel-title" id="settings-appearance-title">Display & extras</h2>
+        <div className="settings-alert-options divide-y divide-slate-200">
+          <Toggle label="Full Moon (AMOLED)" desc="Pure black backgrounds and flat, solid colors for AMOLED displays." checked={settings.fullMoon} onChange={onToggleFullMoon} />
+          <Toggle label="Weather trivia" desc="Show a readable weather fact near the top of the Overview page." checked={settings.showTrivia !== false} onChange={(v) => setToggle("showTrivia", v)} />
+        </div>
+        <button type="button" className="settings-tool-button" onClick={onOpenTerminal}>
+          <Terminal size={18} /><span><b>Open Command Prompt</b><small>View recent app activity in a classic green-text terminal</small></span>
+        </button>
       </section>
 
       <section className="settings-panel settings-language rounded-2xl bg-white p-4 shadow-sm" aria-labelledby="settings-language-title">

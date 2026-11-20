@@ -24,15 +24,7 @@ export default function ClotheslineVisualizer({ closed, onToggle, disabled = fal
         <svg viewBox="0 0 640 230" role="img" aria-labelledby={`${id}-title ${id}-desc`}>
           <title id={`${id}-title`}>Animated retractable clothesline cover</title>
           <desc id={`${id}-desc`}>{closed ? "The simulated canopy is extended over the clothes." : "The simulated canopy is retracted and the clothesline is exposed."}</desc>
-          <defs>
-            <linearGradient id={`${id}-sky`} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#26334a"/><stop offset="1" stopColor="#35465b"/>
-            </linearGradient>
-            <linearGradient id={`${id}-fabric`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#aab5ff"/><stop offset="1" stopColor="#6977d8"/>
-            </linearGradient>
-          </defs>
-          <rect x="1" y="1" width="638" height="228" rx="14" fill={`url(#${id}-sky)`}/>
+          <rect x="1" y="1" width="638" height="228" rx="14" fill="#303f55"/>
           <circle cx="555" cy="43" r="20" fill="#f4d58b" opacity=".9" className="scene-sun"/>
           <g className="scene-clouds" fill="#aab7c9" opacity=".62">
             <ellipse cx="100" cy="48" rx="33" ry="12"/><circle cx="82" cy="43" r="13"/><circle cx="112" cy="37" r="17"/>
@@ -54,7 +46,7 @@ export default function ClotheslineVisualizer({ closed, onToggle, disabled = fal
             <path d="M412 123h18l-2 49q-7 7-14 0z" fill="#e58f9b" stroke="#f5c4ca" strokeWidth="1.5"/>
           </g>
           <g className="retractable-cover">
-            <path d="M66 74L574 74L535 105H105Z" fill={`url(#${id}-fabric)`} stroke="#c6ccff" strokeWidth="2"/>
+            <path d="M66 74L574 74L535 105H105Z" fill="#8996e8" stroke="#c6ccff" strokeWidth="2"/>
             <path d="M105 105H535" stroke="#e3e6ff" strokeWidth="3" strokeLinecap="round"/>
             <path d="M105 105L105 113M535 105L535 113" stroke="#c6ccff" strokeWidth="3"/>
           </g>

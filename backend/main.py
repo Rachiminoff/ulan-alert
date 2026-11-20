@@ -287,6 +287,66 @@ def pause(payload: dict):
     return {"running": live.running}
 
 
+PREDICTION_THRESHOLDS = {"low": 0.50, "medium": 0.40, "high": 0.30}
+PREDICTION_HORIZON_MINUTES = 30
+
+def build_prediction_reality(rows, probabilities, sensitivity="medium", limit=12):
+    """Compare each matured binary rain prediction with rain observed in the next 30 simulated minutes."""
+    threshold = PREDICTION_THRESHOLDS.get(sensitivity, PREDICTION_THRESHOLDS["medium"])
+    horizon = PREDICTION_HORIZON_MINUTES
+    total = min(len(rows), len(probabilities))
+    counts = {"true_positive": 0, "false_positive": 0, "false_negative": 0, "true_negative": 0}
+    records = []
+
+    # The last `horizon` rows are intentionally excluded: their outcome window has not elapsed.
+    for index in range(max(0, total - horizon)):
+        probability = probabilities[index]
+        if probability is None or not np.isfinite(probability):
+            continue
+        predicted = bool(float(probability) >= threshold)
+        actual = any(bool(row.get("raining")) for row in rows[index + 1:index + horizon + 1])
+        if predicted and actual:
+            outcome = "true_positive"
+        elif predicted and not actual:
+            outcome = "false_positive"
+        elif not predicted and actual:
+            outcome = "false_negative"
+        else:
+            outcome = "true_negative"
+        counts[outcome] += 1
+        records.append({
+            "timestamp": rows[index].get("timestamp"),
+            "evaluated_through": rows[index + horizon].get("timestamp"),
+            "probability": round(float(probability), 4),
+            "predicted_rain": predicted,
+            "actual_rain": actual,
+            "outcome": outcome,
+        })
+
+    n = sum(counts.values())
+    correct = counts["true_positive"] + counts["true_negative"]
+    precision_den = counts["true_positive"] + counts["false_positive"]
+    recall_den = counts["true_positive"] + counts["false_negative"]
+    precision = counts["true_positive"] / precision_den if precision_den else None
+    recall = counts["true_positive"] / recall_den if recall_den else None
+    f1 = (2 * precision * recall / (precision + recall)) if precision is not None and recall is not None and precision + recall else (0.0 if precision == 0 or recall == 0 else None)
+    return {
+        "synthetic": True, "sensitivity": sensitivity if sensitivity in PREDICTION_THRESHOLDS else "medium",
+        "threshold": threshold, "horizon_minutes": horizon, "evaluated": n,
+        "pending": min(horizon, total), "counts": counts,
+        "accuracy": correct / n if n else None, "precision": precision, "recall": recall, "f1": f1,
+        "latest": list(reversed(records[-max(1, min(50, int(limit))):])),
+    }
+
+
+@app.get("/api/ml/prediction-vs-reality")
+def prediction_vs_reality(sensitivity: str = "medium", limit: int = 12):
+    with lock:
+        rows = list(live.rows)
+        probabilities = list(live.probs)
+    return build_prediction_reality(rows, probabilities, sensitivity, limit)
+
+
 @app.get("/api/history")
 def history(limit: int = 500):
     with lock:

@@ -211,3 +211,30 @@ class LocationEndpointTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PredictionRealityTests(unittest.TestCase):
+    def test_boolean_predictions_are_compared_only_after_full_horizon(self):
+        rows = [
+            {"timestamp": f"2026-01-01T00:{minute:02d}:00", "raining": minute == 5}
+            for minute in range(40)
+        ]
+        probabilities = [0.8 if minute in (0, 7) else 0.1 for minute in range(40)]
+
+        result = main.build_prediction_reality(rows, probabilities, "medium", 10)
+
+        self.assertEqual(result["evaluated"], 10)
+        self.assertEqual(result["pending"], 30)
+        self.assertEqual(result["counts"]["true_positive"], 1)
+        self.assertEqual(result["counts"]["false_positive"], 1)
+        self.assertEqual(result["counts"]["false_negative"], 4)
+        self.assertEqual(result["counts"]["true_negative"], 4)
+        self.assertEqual(len(result["latest"]), 10)
+        self.assertIsInstance(result["latest"][0]["predicted_rain"], bool)
+        self.assertIsInstance(result["latest"][0]["actual_rain"], bool)
+
+    def test_unknown_sensitivity_uses_medium_threshold(self):
+        rows = [{"timestamp": str(i), "raining": False} for i in range(35)]
+        result = main.build_prediction_reality(rows, [0.4] * 35, "unknown")
+        self.assertEqual(result["sensitivity"], "medium")
+        self.assertEqual(result["threshold"], 0.4)

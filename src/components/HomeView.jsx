@@ -7,6 +7,8 @@ import StatusCard from "./StatusCard";
 import ConfirmDialog from "./ConfirmDialog";
 import SimulationInsights from "./SimulationInsights";
 import ClotheslineVisualizer from "./ClotheslineVisualizer";
+import PredictionReality from "./PredictionReality";
+import WeatherTrivia from "./WeatherTrivia";
 
 function trend(t, v, up = 0.3) {
   return v <= -up ? t("falling") : v >= up ? t("rising") : t("steady");
@@ -38,6 +40,8 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
         {online ? <Wifi aria-hidden="true" className="h-5 w-5" /> : <WifiOff aria-hidden="true" className="h-5 w-5" />}
         {online ? t("connected", { n: secs }) : t("offlineChip")}
       </p>
+
+      {settings.showTrivia !== false && <WeatherTrivia />}
 
       <StatusCard level={level} probability={probability} thresholds={THRESHOLDS[settings.sensitivity]}
         modelReady={device.modelReady !== false} cooling={device.cooling} onAck={ack} onSnooze={snooze} />
@@ -87,6 +91,8 @@ export default function HomeView({ device, settings, notify, coverClosed, setCov
           </div>
         )}
       </section>
+
+      <PredictionReality sensitivity={settings.sensitivity} />
 
       <SimulationInsights scenario={device.scenario} location={device.location}/>
 

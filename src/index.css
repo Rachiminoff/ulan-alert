@@ -123,7 +123,7 @@ html{overflow-x:hidden}
 }
 
 /* Research controls and data visualizations */
-.fac-feedback{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;margin:10px 0;background:#203d34;border:1px solid #356b54;border-radius:8px;color:#b9f1d1;font-size:13px;line-height:1.5}.fac-feedback.error{background:#482d32;border-color:#75434b;color:#ffc4c4}.fac-feedback svg{flex:none;margin-top:1px}.fac-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.fac-heading>span{font-size:11px;font-weight:700;color:var(--muted)}.fac-heading .state-ready{color:#80d8a2}.fac-heading .state-pending{color:#f0c58a}.fac-scenarios button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px}.fac-scenarios button small{font-size:11px;line-height:1.4;color:#b5bac1;font-weight:400}.fac-scenarios button.selected small{color:#e0e4ff}.training-state{display:flex;align-items:center;gap:9px;margin-top:12px;padding:10px 12px;background:#30354b;border-radius:7px;color:#d9ddff;font-size:12px}.training-spinner{width:15px;height:15px;border:2px solid #777fc0;border-top-color:#fff;border-radius:50%;animation:fac-spin .8s linear infinite}@keyframes fac-spin{to{transform:rotate(360deg)}}.research-chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px;margin-top:12px}.research-chart-grid .metric-card{min-width:0}.research-chart-grid .metric-card>p{min-height:36px}.bar-chart{display:grid;gap:10px;margin-top:12px}.bar-chart-row{min-width:0}.bar-chart-label{display:flex;justify-content:space-between;gap:12px;font-size:11px;line-height:1.4;color:#d7d9df}.bar-chart-label span{overflow-wrap:anywhere}.bar-chart-label b{flex:none;color:#fff;font-variant-numeric:tabular-nums}.bar-track,.metric-score-track{height:8px;background:#41434b;border-radius:99px;overflow:hidden;margin-top:5px}.bar-track i,.metric-score-track i{display:block;height:100%;background:linear-gradient(90deg,#5865f2,#67c9e8);border-radius:99px}.metric-score-track{margin-top:12px;height:5px}.chart-empty,.history-chart-empty{padding:16px;color:var(--muted)!important;font-size:13px;line-height:1.5}.alert-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.alert-stat-grid>div{display:flex;flex-direction:column;gap:4px;padding:10px;background:#232428;border-radius:6px;min-width:0}.alert-stat-grid small{color:var(--muted);font-size:10px}.alert-stat-grid b{font-size:17px;font-variant-numeric:tabular-nums}.history-trends{padding:16px;background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:8px}.history-trends h2{margin:0}.history-subtitle{font-size:12px;color:var(--muted)!important;margin:5px 0 14px}.history-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.history-chart{padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;min-width:0}.history-chart-heading{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}.history-chart-heading b{color:var(--white);white-space:nowrap}.history-chart svg{width:100%;height:92px;margin-top:9px;overflow:visible}.chart-baseline{stroke:#454852;stroke-width:.6;stroke-dasharray:2 2}.history-chart-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}.alert-summary{margin-top:12px}.alert-summary>p{margin:0;color:var(--muted)!important;font-size:12px}.alert-stat-grid{margin-top:12px}
+.fac-feedback{display:flex;align-items:flex-start;gap:9px;padding:11px 13px;margin:10px 0;background:#203d34;border:1px solid #356b54;border-radius:8px;color:#b9f1d1;font-size:13px;line-height:1.5}.fac-feedback.error{background:#482d32;border-color:#75434b;color:#ffc4c4}.fac-feedback svg{flex:none;margin-top:1px}.fac-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.fac-heading>span{font-size:11px;font-weight:700;color:var(--muted)}.fac-heading .state-ready{color:#80d8a2}.fac-heading .state-pending{color:#f0c58a}.fac-scenarios button{display:flex;flex-direction:column;align-items:flex-start;text-align:left;gap:4px}.fac-scenarios button small{font-size:11px;line-height:1.4;color:#b5bac1;font-weight:400}.fac-scenarios button.selected small{color:#e0e4ff}.training-state{display:flex;align-items:center;gap:9px;margin-top:12px;padding:10px 12px;background:#30354b;border-radius:7px;color:#d9ddff;font-size:12px}.training-spinner{width:15px;height:15px;border:2px solid #777fc0;border-top-color:#fff;border-radius:50%;animation:fac-spin .8s linear infinite}@keyframes fac-spin{to{transform:rotate(360deg)}}.research-chart-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,280px),1fr));gap:10px;margin-top:12px}.research-chart-grid .metric-card{min-width:0}.research-chart-grid .metric-card>p{min-height:36px}.bar-chart{display:grid;gap:10px;margin-top:12px}.bar-chart-row{min-width:0}.bar-chart-label{display:flex;justify-content:space-between;gap:12px;font-size:11px;line-height:1.4;color:#d7d9df}.bar-chart-label span{overflow-wrap:anywhere}.bar-chart-label b{flex:none;color:#fff;font-variant-numeric:tabular-nums}.bar-track,.metric-score-track{height:8px;background:#41434b;border-radius:99px;overflow:hidden;margin-top:5px}.bar-track i,.metric-score-track i{display:block;height:100%;background:#6878d8;border-radius:99px}.metric-score-track{margin-top:12px;height:5px}.chart-empty,.history-chart-empty{padding:16px;color:var(--muted)!important;font-size:13px;line-height:1.5}.alert-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}.alert-stat-grid>div{display:flex;flex-direction:column;gap:4px;padding:10px;background:#232428;border-radius:6px;min-width:0}.alert-stat-grid small{color:var(--muted);font-size:10px}.alert-stat-grid b{font-size:17px;font-variant-numeric:tabular-nums}.history-trends{padding:16px;background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:8px}.history-trends h2{margin:0}.history-subtitle{font-size:12px;color:var(--muted)!important;margin:5px 0 14px}.history-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.history-chart{padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;min-width:0}.history-chart-heading{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted)}.history-chart-heading b{color:var(--white);white-space:nowrap}.history-chart svg{width:100%;height:92px;margin-top:9px;overflow:visible}.chart-baseline{stroke:#454852;stroke-width:.6;stroke-dasharray:2 2}.history-chart-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-variant-numeric:tabular-nums}.alert-summary{margin-top:12px}.alert-summary>p{margin:0;color:var(--muted)!important;font-size:12px}.alert-stat-grid{margin-top:12px}
 @media(max-width:600px){.history-chart-grid{grid-template-columns:1fr}.alert-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.research-chart-grid{grid-template-columns:1fr}.bar-chart-label{font-size:10px}}
 @media(prefers-reduced-motion:reduce){.training-spinner{animation:none}}
 
@@ -148,7 +148,7 @@ html{overflow-x:hidden}
 .dashboard-chart-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:12px}.dash-chart{padding:12px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;min-width:0}.dash-chart-title{display:flex;justify-content:space-between;gap:8px;color:var(--muted);font-size:11px}.dash-chart-title b{color:var(--white);white-space:nowrap}.dash-chart svg{width:100%;height:75px;margin-top:7px}.dash-chart-scale{display:flex;justify-content:space-between;color:var(--muted);font-size:9px}.simulation-disclaimer{display:flex;align-items:flex-start;gap:8px;margin:0;color:var(--muted)!important;font-size:11px;line-height:1.5}.simulation-disclaimer svg{flex:none;margin-top:1px;color:#9ba8ff}
 .fac-modal-backdrop{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,7,14,.78);backdrop-filter:blur(7px)}
 .fac-modal{display:flex;flex-direction:column;width:min(1100px,100%);max-height:min(90vh,900px);overflow:hidden;background:#202127!important;border:1px solid #555a73!important;border-radius:12px!important;box-shadow:0 24px 90px rgba(0,0,0,.55)}
-.fac-modal-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 20px;background:linear-gradient(110deg,#292d46,#25262d);border-bottom:1px solid #44485d}
+.fac-modal-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:17px 20px;background:#292d46;border-bottom:1px solid #44485d}
 .fac-modal-header>div{display:flex;flex-direction:column;gap:5px}.fac-modal-header .fac-title{display:flex;align-items:center;gap:9px;font-size:16px;font-weight:900;color:#f4f5ff}.fac-modal-header .fac-caption{font-size:11px;color:#b5bac1}.fac-close{width:36px;height:36px;flex:none;background:#3b3d47;color:#fff;font-size:25px;line-height:1;border:1px solid #565966;border-radius:7px}
 .fac-modal .fac-body{overflow-y:auto;padding:16px 20px 22px}.fac-modal .fac-intro{color:#c4c7d0!important}.fac-modal .fac-section{background:#25272f!important;border-color:#444751!important;border-radius:9px!important}.fac-modal .fac-scenarios button{min-height:76px;padding:10px;background:#30323b;border:1px solid #4a4d58;color:#f2f3f5}.fac-modal .fac-scenarios button.selected{background:#343a62;border-color:#7b86d9;box-shadow:inset 0 0 0 1px #7b86d9}.fac-modal .fac-controls button{border:1px solid #555a70;background:#34384d;color:#f3f4ff;padding:9px 12px}.fac-modal .fac-controls button:disabled{opacity:.55;cursor:wait}
 .tech-stack-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}.tech-stack-grid article{display:flex;align-items:center;gap:12px;padding:13px;background:var(--panel2);border:1px solid var(--line);border-radius:8px;min-width:0}.tech-stack-grid article>svg{width:22px;height:22px;flex:none;color:#aab4ff}.tech-stack-grid article div{display:flex;flex-direction:column;gap:4px;min-width:0}.tech-stack-grid b{font-size:13px}.tech-stack-grid small{font-size:11px;color:var(--muted);line-height:1.45}
@@ -217,9 +217,8 @@ body{min-height:100vh;background:#313338}
   border:1px solid #6b6d78;
   border-radius:999px;
   background-color:#404249;
-  background-image:radial-gradient(circle,#e5e7eb 0 7px,transparent 7.5px);
-  background-repeat:no-repeat;
-  background-position:2px center;
+  background-image:none;
+  position:relative;
   transition:background-color .15s ease,border-color .15s ease,background-position .15s ease;
 }
 .settings-sensitivity-options{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:8px}
@@ -229,11 +228,9 @@ body{min-height:100vh;background:#313338}
 .settings-alerts{display:flex;flex-direction:column}
 .settings-alert-options{display:flex;flex:1;flex-direction:column}
 .settings-alert-options>label{flex:1}
-.settings-switch-input:checked{
-  border-color:#8790ff;
-  background-color:#5865f2;
-  background-position:calc(100% - 2px) center;
-}
+.settings-switch-input::after{content:"";display:block;width:16px;height:16px;margin:3px;border-radius:50%;background:#e5e7eb;transition:transform .15s ease}
+.settings-switch-input:checked{border-color:#8790ff;background-color:#5865f2}
+.settings-switch-input:checked::after{transform:translateX(17px)}
 @media(prefers-reduced-motion:reduce){.settings-switch-input{transition:none}}
 
 /* ---- Live model monitor + reorganised lab panel ---- */
@@ -272,3 +269,143 @@ body{min-height:100vh;background:#313338}
 @media(max-width:760px){.mm-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.mm-driver{grid-template-columns:1fr 70px}.mm-driver-track{grid-column:1/-1;order:3}}
 
 .mm-chart-wrap{overflow-x:auto}.mm-chart-wrap .mm-chart{min-width:600px}
+
+/* Small delight features: solid AMOLED theme, readable trivia, and a classic command prompt. */
+.brand-clickable{border:0;background:transparent;color:inherit;text-align:left;cursor:pointer}
+.brand-clickable:focus-visible{outline:3px solid #aab4ff;outline-offset:4px;border-radius:8px}
+.weather-trivia{display:block;padding:17px 18px;background:#20242d!important;border:1px solid #596273!important;border-left:4px solid #d8bd65!important;border-radius:9px!important;box-shadow:0 2px 8px rgba(0,0,0,.12)}
+.weather-trivia-heading{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.weather-trivia-icon{display:grid;place-items:center;width:38px;height:38px;flex:none;border-radius:7px;background:#3b3a2d;color:#f0d77d}
+.weather-trivia-icon svg{width:20px;height:20px}
+.weather-trivia-kicker{font-size:10px;font-weight:900;letter-spacing:.12em;color:#e7cc70}
+.weather-trivia-heading h3{margin:2px 0 0;font-size:15px;font-weight:800;color:#f5f5f5}
+.weather-trivia-copy{padding-left:49px;min-width:0}
+.weather-trivia-copy h4{margin:0 0 6px;font-size:15px;line-height:1.35;font-weight:800;color:#fff}
+.weather-trivia-copy p{margin:0;color:#e0e2e6!important;font-size:13px;line-height:1.65}
+.weather-trivia-next{display:grid;place-items:center;width:34px;height:34px;margin-left:auto;border:1px solid #62604a;border-radius:6px;background:#343326;color:#f0d77d}
+.weather-trivia-next:hover{background:#45432f}
+.settings-tool-button{display:flex;align-items:center;gap:12px;width:100%;min-height:58px;margin-top:12px;padding:10px 12px;border:1px solid #cbd5e1;border-radius:9px;background:#f8fafc;color:#172033;text-align:left}
+.settings-tool-button:hover{background:#eef2f7}
+.settings-tool-button>span{display:flex;flex-direction:column;gap:3px}
+.settings-tool-button b{font-size:14px}.settings-tool-button small{font-size:11px;color:#64748b}
+.terminal-backdrop,.easter-egg-backdrop{position:fixed;inset:0;z-index:150;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.78)}
+.terminal-window{display:flex;flex-direction:column;width:min(900px,100%);height:min(680px,88vh);overflow:hidden;border:1px solid #555;background:#000;color:#00ff00;font-family:Consolas,"Courier New",monospace;box-shadow:0 18px 60px rgba(0,0,0,.55)}
+.terminal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 10px;background:#d6d6d6;border-bottom:1px solid #777;color:#111;font-family:Arial,sans-serif}
+.terminal-header>div{display:flex;align-items:center;gap:8px}.terminal-header b{font-size:12px;font-weight:600;color:#111}.terminal-app-icon{display:inline-grid;place-items:center;width:20px;height:20px;background:#111;color:#00ff00;font:700 10px Consolas,monospace}
+.terminal-header>button{display:grid;place-items:center;width:28px;height:24px;border:1px solid #777;background:#e8e8e8;color:#111}
+.terminal-output{flex:1;overflow:auto;padding:13px 14px;background:#000;color:#00ff00;font:12px/1.55 Consolas,"Courier New",monospace}
+.terminal-output>p{margin:0 0 2px;color:#00ff00}.terminal-output .terminal-spacer{height:10px}
+.terminal-line{overflow-wrap:anywhere}.terminal-line code{color:#00ff00;white-space:pre-wrap;font:inherit}
+.terminal-empty{color:#00cc00!important}.terminal-command{display:flex;align-items:center;gap:7px;margin-top:8px!important}.terminal-command i{display:inline-block;width:7px;height:14px;background:#00ff00;animation:cmd-blink 1s steps(2,start) infinite}
+@keyframes cmd-blink{to{visibility:hidden}}
+.terminal-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 10px;border-top:1px solid #333;background:#080808;color:#00c900;font:10px Consolas,monospace}
+.terminal-footer button{display:flex;align-items:center;gap:5px;padding:4px 7px;border:1px solid #126b12;background:#001900;color:#00ff00;font:10px Consolas,monospace}
+.developer-easter-egg{position:relative;width:min(440px,100%);padding:30px 28px 25px;border:1px solid #59658d;border-radius:10px;background:#202638;color:#edf1ff;text-align:center;box-shadow:0 18px 55px rgba(0,0,0,.55)}
+.easter-egg-close{position:absolute;top:12px;right:12px;display:grid;place-items:center;width:34px;height:34px;border:1px solid #4d5878;border-radius:7px;background:#303b58;color:#edf1ff}
+.easter-egg-sparkle{display:grid;place-items:center;width:52px;height:52px;margin:0 auto 15px;border-radius:10px;background:#39476d;color:#d9e1ff}
+.easter-egg-sparkle svg{width:25px;height:25px}.developer-easter-egg>small{font-size:9px;font-weight:900;letter-spacing:.16em;color:#aebeff}
+.developer-easter-egg h2{margin:9px 0;font-size:23px;line-height:1.2;color:#fff}.developer-easter-egg p{margin:0 0 15px;color:#cbd3e8;font-size:13px;line-height:1.65}.developer-easter-egg>span{font-size:10px;color:#9eacd0}
+/* Full Moon is a true-black AMOLED theme: no gradients, glows, or tinted page canvas. */
+.full-moon-mode{--bg:#000;--panel:#080808;--panel2:#050505;--line:#242424;--accent:#d6d6d6;background:#000!important;color:#f2f2f2;min-height:100vh}
+.full-moon-mode .desktop-sidebar,.full-moon-mode .mobile-nav{background:#000;border-color:#222}
+.full-moon-mode .topbar{background:#000;border-color:#242424}
+.full-moon-mode .brand-mark{background:#202020;box-shadow:none}
+.full-moon-mode .location-strip,.full-moon-mode .content section,.full-moon-mode .content fieldset,.full-moon-mode .content details{background:#080808!important;border-color:#262626!important}
+.full-moon-mode .content .bg-white,.full-moon-mode .content .bg-slate-100,.full-moon-mode .content .bg-slate-200,.full-moon-mode .content .bg-slate-50{background:#080808!important}
+.full-moon-mode .content .text-slate-900,.full-moon-mode .content .text-slate-800,.full-moon-mode .content .text-slate-700,.full-moon-mode .content .text-slate-600,.full-moon-mode .content h1,.full-moon-mode .content h2,.full-moon-mode .content h3,.full-moon-mode .content h4,.full-moon-mode .content strong,.full-moon-mode .content dt{color:#f0f0f0!important}
+.full-moon-mode .side-nav.active,.full-moon-mode .mobile-nav button.active{background:#171717;border-color:#555;color:#fff}
+.full-moon-mode .weather-trivia{background:#090909!important;border-color:#333!important;border-left-color:#bca75e!important}
+.full-moon-mode .weather-trivia-copy p{color:#d0d0d0!important}
+.full-moon-mode .settings-tool-button{background:#0a0a0a;border-color:#333;color:#f0f0f0}
+.full-moon-mode .settings-tool-button small{color:#aaa}
+.full-moon-mode .settings-tool-button:hover{background:#151515}
+.full-moon-mode .settings-panel-title{color:#f0f0f0}
+.full-moon-mode .terminal-window{border-color:#555}
+@media(max-width:760px){.terminal-backdrop,.easter-egg-backdrop{padding:0;align-items:stretch}.terminal-window{width:100%;height:100%;max-height:100dvh}.developer-easter-egg{align-self:center;margin:18px}.weather-trivia{padding:14px}.weather-trivia-copy{padding-left:0}.weather-trivia-heading{margin-bottom:10px}}
+@media(prefers-reduced-motion:reduce){.terminal-command i{animation:none}.terminal-backdrop,.easter-egg-backdrop{backdrop-filter:none}}
+
+/* Flat-color policy: the interface uses solid fills only. */
+.app-shell,.app-shell *{background-image:none!important}
+
+/* Trivia is intentionally prominent and readable in the default dark dashboard. */
+.weather-trivia{padding:20px;background:#fff2c2!important;border:1px solid #d5b85c!important;border-left:5px solid #a77b12!important;border-radius:8px!important;box-shadow:none!important;color:#241d0b!important}
+.weather-trivia-heading{gap:12px;margin-bottom:14px}
+.weather-trivia-icon{width:42px;height:42px;border-radius:7px;background:#f0d77d!important;color:#302407!important}
+.weather-trivia-kicker{font-size:11px;letter-spacing:.1em;color:#6b5010!important}
+.weather-trivia-heading h3{font-size:19px;line-height:1.25;color:#211a08!important}
+.weather-trivia-copy{padding-left:54px}
+.weather-trivia-copy h4{font-size:17px;line-height:1.35;color:#211a08!important}
+.weather-trivia-copy p{font-size:15px;line-height:1.65;color:#3e351e!important}
+.weather-trivia-next{width:38px;height:38px;border:1px solid #9d812d;border-radius:6px;background:#f5df91!important;color:#3a2c0b!important}
+.weather-trivia-next:hover{background:#e9cf76!important}
+
+/* Classic Command Prompt: plain Windows title bar, black console, green monospace text. */
+.terminal-backdrop{background:rgba(0,0,0,.72)!important;backdrop-filter:none!important}
+.terminal-window{width:min(900px,100%);height:min(620px,86vh);border:1px solid #777;border-radius:0!important;background:#000!important;color:#00ff00!important;box-shadow:0 12px 36px rgba(0,0,0,.55);font-family:Consolas,"Courier New",monospace}
+.terminal-titlebar{display:flex;align-items:center;justify-content:space-between;min-height:30px;padding:3px 5px 3px 8px;background:#c0c0c0!important;border:0;border-bottom:1px solid #777;color:#111!important;font:12px "Segoe UI",Arial,sans-serif}
+.terminal-titlebar>div{display:flex;align-items:center;gap:7px}
+.terminal-titlebar>button{display:grid;place-items:center;width:22px;height:21px;border:1px solid #777;border-radius:0!important;background:#d4d0c8!important;color:#111!important}
+.terminal-app-icon{display:inline-grid;place-items:center;width:16px;height:16px;background:#000!important;color:#00ff00!important;font:700 9px Consolas,monospace}
+.terminal-output{flex:1;overflow:auto;padding:12px;background:#000!important;color:#00ff00!important;font:13px/1.55 Consolas,"Courier New",monospace;white-space:pre-wrap}
+.terminal-output>p,.terminal-line{margin:0 0 2px;color:#00ff00!important;font:inherit;overflow-wrap:anywhere}
+.terminal-output .terminal-empty{color:#00d000!important}
+.terminal-command{display:flex;align-items:center;gap:7px;margin-top:7px!important}
+.terminal-command i{display:inline-block;width:8px;height:15px;background:#00ff00!important;animation:cmd-blink 1s steps(2,start) infinite}
+
+/* Full Moon is true AMOLED black: no tinted canvas, gradients, or decorative glow. */
+.full-moon-mode,.full-moon-mode body{background:#000!important;color:#f2f2f2!important}
+.full-moon-mode .app-shell,.full-moon-mode .main-column,.full-moon-mode .content{background:#000!important;color:#f2f2f2!important}
+.full-moon-mode .desktop-sidebar,.full-moon-mode .mobile-nav,.full-moon-mode .topbar{background:#000!important;border-color:#202020!important}
+.full-moon-mode .location-strip,.full-moon-mode .content section:not(.status-card),.full-moon-mode .content fieldset,.full-moon-mode .content details,.full-moon-mode .settings-panel{background:#050505!important;border-color:#242424!important;box-shadow:none!important}
+.full-moon-mode .content .bg-white,.full-moon-mode .content .bg-slate-50,.full-moon-mode .content .bg-slate-100,.full-moon-mode .content .bg-slate-200,.full-moon-mode .content .bg-slate-300{background:#080808!important}
+.full-moon-mode .content .text-slate-900,.full-moon-mode .content .text-slate-800,.full-moon-mode .content .text-slate-700,.full-moon-mode .content .text-slate-600,.full-moon-mode .content h1,.full-moon-mode .content h2,.full-moon-mode .content h3,.full-moon-mode .content h4,.full-moon-mode .content strong,.full-moon-mode .content dt,.full-moon-mode .content label{color:#f0f0f0!important}
+.full-moon-mode .content p,.full-moon-mode .content dd,.full-moon-mode .content small{color:#bdbdbd!important}
+.full-moon-mode .brand-mark{background:#111!important;box-shadow:none!important}
+.full-moon-mode .side-nav.active,.full-moon-mode .mobile-nav button.active{background:#111!important;border-color:#555!important;color:#fff!important}
+.full-moon-mode .weather-trivia{background:#080808!important;border-color:#333!important;border-left-color:#bca75e!important}
+.full-moon-mode .weather-trivia-icon{background:#171717!important;color:#e3cf83!important}
+.full-moon-mode .weather-trivia-kicker{color:#d7c47c!important}
+.full-moon-mode .weather-trivia-heading h3,.full-moon-mode .weather-trivia-copy h4{color:#f4f0df!important}
+.full-moon-mode .weather-trivia-copy p{color:#d0d0d0!important}
+.full-moon-mode .weather-trivia-next{background:#111!important;border-color:#555!important;color:#e3cf83!important}
+.full-moon-mode .settings-tool-button{background:#080808!important;border-color:#333!important;color:#f0f0f0!important}
+.full-moon-mode .settings-tool-button small{color:#aaa!important}
+.full-moon-mode .settings-tool-button:hover{background:#151515!important}
+.full-moon-mode .settings-panel-title{color:#f0f0f0!important}
+.full-moon-mode .terminal-window{border-color:#777!important}
+.full-moon-mode .footer-note{color:#777!important}
+@media(max-width:760px){.terminal-backdrop{padding:0;align-items:stretch}.terminal-window{width:100%;height:100%;max-height:100dvh}.weather-trivia{padding:16px}.weather-trivia-copy{padding-left:0}.weather-trivia-heading{margin-bottom:12px}}
+
+/* Keep trivia's high-contrast card above the general content-section surface rule. */
+.content section.weather-trivia{background:#fff2c2!important;border-color:#d5b85c!important;border-left-color:#a77b12!important}
+.full-moon-mode .content section.weather-trivia{background:#080808!important;border-color:#333!important;border-left-color:#bca75e!important}
+
+
+/* The easter-egg card uses a single flat fill; no gradient, glow, or layered shadow. */
+.developer-easter-egg,.developer-easter-egg *{background-image:none!important}
+.developer-easter-egg{background:#202638!important;box-shadow:none!important}
+.developer-easter-egg .easter-egg-sparkle{background:#39476d!important}
+.developer-easter-egg .easter-egg-close{background:#303b58!important}
+
+/* Boolean prediction-versus-reality comparison. */
+.prediction-reality{padding:18px;background:var(--panel)!important;border:1px solid var(--line)!important;border-radius:9px;min-width:0}
+.pr-heading{display:flex;align-items:center;gap:11px}
+.pr-heading-icon{display:grid;place-items:center;width:40px;height:40px;flex:none;background:#30364a;color:#b9c4ff;border-radius:7px}
+.pr-heading h3{margin:0;font-size:17px;font-weight:800;color:var(--text)}
+.pr-heading p{margin:3px 0 0;color:var(--muted);font-size:12px;line-height:1.5}
+.pr-definition{display:flex;flex-wrap:wrap;gap:8px 18px;margin:14px 0;padding:11px 12px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;font-size:12px;color:var(--muted)}
+.pr-definition b{color:var(--text)}.pr-definition small{width:100%;font-size:11px}
+.pr-metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.pr-metrics article{display:flex;flex-direction:column;gap:4px;min-width:0;padding:11px;background:var(--panel2);border:1px solid var(--line);border-radius:7px}
+.pr-metrics small{font-size:11px;color:var(--muted)}.pr-metrics b{font-size:22px;line-height:1.2;font-variant-numeric:tabular-nums;color:var(--text)}.pr-metrics article span{font-size:10px;line-height:1.4;color:var(--muted)}
+.pr-matrix{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.pr-matrix-cell{display:grid;grid-template-columns:1fr auto;gap:5px 8px;align-items:center;padding:10px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;min-width:0}
+.pr-matrix-cell>span{display:flex;align-items:center;gap:5px;min-width:0;font-size:10px;line-height:1.35;color:var(--muted)}.pr-matrix-cell>b{font-size:19px;font-variant-numeric:tabular-nums;color:var(--text)}.pr-matrix-cell>small{grid-column:1/-1;font-size:9px;font-weight:800;letter-spacing:.08em;color:var(--muted)}
+.pr-good>span svg{color:#55b989}.pr-warn>span svg{color:#d3a84f}.pr-bad>span svg{color:#dc7777}
+.pr-recent-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:16px 0 8px;font-size:12px;color:var(--text)}.pr-recent-heading>span{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:10px}
+.pr-records{display:grid;gap:6px}.pr-record{display:grid;grid-template-columns:minmax(105px,.8fr) minmax(150px,1.1fr) minmax(130px,1fr);gap:8px;align-items:center;padding:9px 10px;background:var(--panel2);border:1px solid var(--line);border-radius:6px;min-width:0}
+.pr-record-time{font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}.pr-bool{display:flex;flex-wrap:wrap;gap:5px 12px}.pr-bool span{font-size:10px;color:var(--muted)}.pr-bool b{margin-left:3px;color:var(--text)}
+.pr-outcome{justify-self:start;font-size:10px;font-weight:800}.pr-outcome.pr-good{color:#4cae80}.pr-outcome.pr-warn{color:#c49a42}.pr-outcome.pr-bad{color:#d56e6e}
+.pr-empty{margin:12px 0 0;color:var(--muted);font-size:12px;line-height:1.5}.pr-footnote{display:flex;align-items:flex-start;gap:6px;margin:10px 0 0;color:var(--muted);font-size:10px;line-height:1.5}.pr-footnote svg{flex:none;margin-top:1px}
+.full-moon-mode .prediction-reality{background:#050505!important;border-color:#242424!important}.full-moon-mode .pr-heading-icon{background:#111!important;color:#ddd!important}.full-moon-mode .pr-definition,.full-moon-mode .pr-metrics article,.full-moon-mode .pr-matrix-cell,.full-moon-mode .pr-record{background:#080808!important;border-color:#252525!important}.full-moon-mode .pr-heading h3,.full-moon-mode .pr-definition b,.full-moon-mode .pr-metrics b,.full-moon-mode .pr-matrix-cell>b,.full-moon-mode .pr-bool b,.full-moon-mode .pr-recent-heading{color:#eee!important}
+@media(max-width:700px){.pr-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.pr-matrix{grid-template-columns:repeat(2,minmax(0,1fr))}.pr-record{grid-template-columns:1fr auto;gap:6px}.pr-bool{grid-column:1/-1;grid-row:2}.pr-outcome{grid-column:2;grid-row:1}.pr-record-time{grid-column:1;grid-row:1}}

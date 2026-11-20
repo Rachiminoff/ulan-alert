@@ -1,10 +1,21 @@
-// Records every interaction so a facilitator can export time-on-task and error data
-// for the usability test (tasks T1-T4 and the SUS session).
+// Records interactions for usability exports and the optional live terminal view.
 const start = Date.now();
 const rows = [];
+const listeners = new Set();
 
 export function logEvent(action, detail = "") {
-  rows.push({ t_ms: Date.now() - start, action, detail: String(detail) });
+  const row = { t_ms: Date.now() - start, at: new Date().toLocaleTimeString(), action, detail: String(detail) };
+  rows.push(row);
+  listeners.forEach((listener) => listener(row));
+}
+
+export function getRecentEvents(limit = 80) {
+  return rows.slice(-limit).reverse();
+}
+
+export function subscribeToEvents(listener) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
 
 export function downloadLog() {
