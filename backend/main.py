@@ -12,6 +12,7 @@ Changes vs. the first version:
 from __future__ import annotations
 
 import asyncio
+import copy
 import json
 import os
 import threading
@@ -37,6 +38,27 @@ CACHE = Path(__file__).parent / ".cache" / "model.joblib"
 TICK_SECONDS = float(os.environ.get("ULAN_TICK_SECONDS", "2.0"))
 LIVE_MODEL = "Random Forest"
 MAX_ROWS = 20000
+
+# Demo presets are introduced part-way through their approach, then replayed to
+# the present. This gives the user visible precursor trends immediately while
+# keeping the simulated rain onset about 20 minutes in the future.
+RAIN_AHEAD = 20
+PRESETS = {
+    "cloud_build": ("convective", .88, 70, 30, True),
+    "shower": ("convective", .78, 60, 28, True),
+    "thunderstorm": ("convective", .98, 75, 55, True),
+    "habagat": ("frontal", .90, 150, 300, True),
+    "flash_shower": ("convective", .88, 45, 18, True),
+    "false_warning": ("convective", .70, 70, 40, False),
+    # Keep the additional presets exposed by the current UI on the same
+    # rewind-and-replay path rather than silently falling back to abrupt starts.
+    "habagat_surge": ("frontal", .98, 140, 420, True),
+    "la_nina_wet": ("frontal", .92, 140, 240, True),
+    "typhoon_approach": ("frontal", 1.0, 150, 600, True),
+}
+PREROLL_MIN = {name: values[2] - RAIN_AHEAD for name, values in PRESETS.items()}
+WARMUP = HISTORY + 59 + max(PREROLL_MIN.values()) + 5
+
 ENABLE_RETRAIN = os.environ.get("ULAN_ENABLE_RETRAIN", "true").strip().lower() in {"1", "true", "yes", "on"}
 FRONTEND_DIST = Path(__file__).resolve().parent.parent / "dist"
 
@@ -61,14 +83,16 @@ class Live:
                                     longitude=self.location["longitude"])
         self.rows: deque = deque(maxlen=MAX_ROWS)
         self.probs: deque = deque(maxlen=MAX_ROWS)
+        self.snaps: deque = deque(maxlen=max(PREROLL_MIN.values()) + 2)    # (minute, simulator copy) for rewinding
         self.last_features = None
         self.drivers: list = []
-        self._advance(HISTORY + 59)       # warm-up so every feature is defined immediately
+        self._advance(WARMUP)             # warm-up so every feature is defined immediately
 
     # ------------------------------------------------------------------
     def _advance(self, k: int):
         for _ in range(k):
             s = self.sim.step()
+            self.snaps.append((self.sim.n, copy.deepcopy(self.sim)))
             self.rows.append({"timestamp": s.timestamp.isoformat(), "pressure": s.pressure_hpa, "temperature": s.temperature_c,
                               "humidity": s.humidity_pct, "light": s.light_lux, "rain_mm": s.rain_mm, "raining": s.raining,
                               "scenario": s.scenario})
@@ -90,6 +114,40 @@ class Live:
         self.drivers = []
         if models is not None and self.last_features is not None and not np.isnan(p[-1]) and p[-1] > 0.1:
             self.drivers = ml.explain(models[LIVE_MODEL], self.last_features, store["medians"])
+
+    def apply_scenario(self, scenario: str):
+        scenario = scenario if scenario in SCENARIOS else "natural"
+        self.scenario = scenario
+        if scenario not in PRESETS:
+            self.sim.set_scenario(scenario)
+            return
+
+        kind, strength, lead, duration, rains = PRESETS[scenario]
+        pre_roll = min(lead - RAIN_AHEAD, len(self.rows) - HISTORY, len(self.snaps) - 1)
+        target_n = self.sim.n - pre_roll
+
+        while self.snaps and self.snaps[-1][0] > target_n:
+            self.snaps.pop()
+        if not self.snaps or self.snaps[-1][0] != target_n:
+            # Defensive fallback if the requested rewind point is unavailable.
+            self.sim.set_scenario(scenario)
+            return
+
+        for _ in range(pre_roll):
+            self.rows.pop()
+            self.probs.pop()
+
+        self.sim = copy.deepcopy(self.snaps[-1][1])
+        self.sim.scenario = scenario
+        self.sim.suppress = False
+        # Remove unrelated nearby systems so the selected preset remains deterministic.
+        self.sim.systems = [
+            system for system in self.sim.systems
+            if system.onset > self.sim.n + lead + 60 or system.n0 < self.sim.n - 400
+        ]
+        self.sim._new_system(kind, lead=lead, strength=strength, rains=rains,
+                             dur=duration, n0=self.sim.n)
+        self._advance(pre_roll)
 
     def tick(self):
         if self.running:
@@ -176,7 +234,7 @@ def _status():
         "timestamp": cur["timestamp"], "pressureDelta3h": float(f[FEATURES.index("pressure_delta_3h")]) if f is not None else 0.0,
         "readings": {"pressure": cur["pressure"], "humidity": cur["humidity"], "temperature": cur["temperature"],
                      "light": round(cur["light"] / 1000, 1)},
-        "rain_mm": cur["rain_mm"], "speed": live.speed, "drivers": live.drivers,
+        "rain_mm": cur["rain_mm"], "speed": live.speed, "running": live.running, "drivers": live.drivers,
     }
 
 
@@ -203,9 +261,7 @@ def get_status():
 @app.post("/api/simulation/scenario")
 def change_scenario(payload: dict):
     with lock:
-        live.scenario = payload.get("scenario", "natural") if payload.get("scenario") in SCENARIOS else "natural"
-        live.sim.set_scenario(live.scenario)
-        live._advance(1)
+        live.apply_scenario(payload.get("scenario", "natural"))
     return {"scenario": live.scenario, "ok": True}
 
 
@@ -261,9 +317,11 @@ def set_location(payload: dict):
     if not (-90 <= latitude <= 90 and -180 <= longitude <= 180):
         return {"ok": False, "message": "Coordinates are outside valid bounds"}
     with lock:
+        unchanged = (abs(live.location["latitude"] - latitude) < 1e-6 and abs(live.location["longitude"] - longitude) < 1e-6)
         live.location = {"name": name, "latitude": latitude, "longitude": longitude, "source": payload.get("source", "manual")}
-        live.reset()
-        return {"ok": True, "location": live.location}
+        if not unchanged:                       # the app posts its saved location on every page load; don't wipe a running demo
+            live.reset()
+        return {"ok": True, "location": live.location, "reset": not unchanged}
 
 
 # ------------------------------------------------------------------ ML endpoints
@@ -321,8 +379,59 @@ def live_eval(minutes: int = 1440):
             "note": "Computed on the running simulation's own history; small windows are noisy."}
 
 
-# Serve built Vite assets from the same origin as the API. Keep this catch-all
-# after every API route so /api, /docs, and /healthz retain their handlers.
+TRACE_MODELS = {"rf": "Random Forest", "gb": "Gradient Boosting", "lr": "Logistic Regression"}
+
+
+@app.get("/api/ml/trace")
+def trace(minutes: int = 180, warn: float = ml.WARN_DEFAULT):
+    """Per-minute view of what every model thinks about the *running* simulation, plus the alert rule's state and
+    the lead time achieved for each rain onset in the window. Powers the live model monitor in the lab panel."""
+    with lock:
+        if not store["ready"]:
+            return {"model_ready": False}
+        minutes = int(max(30, min(720, minutes)))
+        n = min(len(live.rows), HISTORY + minutes)
+        df = pd.DataFrame(list(live.rows)[-n:])
+        F = compute_features(df)
+        ok = ~F.isna().any(axis=1).to_numpy()
+        X = F.to_numpy(float)
+        probs = {}
+        for key, name in TRACE_MODELS.items():
+            p = np.full(n, np.nan)
+            if ok.any():
+                p[ok] = store["models"][name].predict_proba(X[ok])[:, 1]
+            probs[key] = p
+        wet = df["raining"].to_numpy(bool)
+        rp = store["metrics"].get("Pressure/humidity rule", {}).get("rule_params")
+        rule = np.zeros(n)
+        if rp:
+            rule = ((F["pressure_delta_1h"] < rp["pressure_delta_1h_below"]) & (F["humidity_delta_30m"] > rp["humidity_delta_30m_above"])
+                    & (F["humidity"] > rp["humidity_above"])).to_numpy(float)
+        act = ml.warn_active(probs["rf"], wet, warn)
+        k = min(n, minutes)
+        sl = slice(n - k, n)
+        # lead time achieved for each rain onset inside the window (any lead; >= 10 min counts as useful)
+        events = []
+        for i in range(n - k, n):
+            if wet[i] and not wet[max(0, i - 30):i].any() and i >= 1:
+                t = next((j for j in range(i - 1, max(-1, i - 61), -1) if act[j]), None)
+                lead = None
+                if t is not None:
+                    while t > 0 and act[t - 1] and t - 1 >= i - 60:
+                        t -= 1
+                    lead = i - t
+                events.append({"index": i - (n - k), "lead_min": lead})
+        return {
+            "model_ready": True, "warn": warn, "minutes": k, "running": live.running, "speed": live.speed, "scenario": live.scenario,
+            "t": df["timestamp"].iloc[sl].tolist(), "wet": wet[sl].astype(int).tolist(), "alert": act[sl].astype(int).tolist(),
+            "rule": rule[sl].tolist(), "pressure": df["pressure"].iloc[sl].tolist(), "humidity": df["humidity"].iloc[sl].tolist(),
+            **{key: [None if np.isnan(v) else round(float(v), 4) for v in p[sl]] for key, p in probs.items()},
+            "events": events, "drivers": live.drivers,
+        }
+
+
+# Serve the compiled Vite application from the same origin as the API. This
+# catch-all is deliberately last so API and FastAPI documentation routes win.
 @app.get("/{asset_path:path}", include_in_schema=False)
 def frontend_assets(asset_path: str):
     if asset_path == "api" or asset_path.startswith(("api/", "docs", "redoc", "openapi.json", "healthz")):

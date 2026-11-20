@@ -34,7 +34,7 @@ export default function App(){
    {tab==="about"&&<AboutView/>}{tab==="help"&&<HelpView/>}
    <div className="footer-note"><CloudRain size={15}/> SYNTHETIC WEATHER SIMULATION · NOT AN OFFICIAL FORECAST</div>
   </main></div>
-  <FacilitatorPanel device={device} open={researchOpen} onClose={()=>setResearchOpen(false)}/>
+  <FacilitatorPanel device={device} sensitivity={settings.sensitivity} open={researchOpen} onClose={()=>setResearchOpen(false)}/>
   <Toast message={toast} onDone={clearToast}/>
   <nav aria-label="Main" className="mobile-nav">{tabs.map(([id,label,Icon])=><button key={id} onClick={()=>go(id)} aria-current={tab===id?"page":undefined} className={tab===id?"active":""}><Icon/><span>{label}</span></button>)}</nav>
  </div></LangContext.Provider>

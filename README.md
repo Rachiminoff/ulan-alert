@@ -10,7 +10,10 @@
 
 ## Deploy publicly on Render
 
-The repository includes a single-service Docker deployment. Render builds the Vite frontend and serves it from FastAPI, so the public website and `/api/*` endpoints use one URL. Follow [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) to deploy the included `render.yaml` Blueprint. The public configuration disables anonymous model retraining while keeping the simulation controls available.
+The repository includes a single-service Docker deployment. Render builds the Vite frontend and serves it from FastAPI, so the public website and `/api/*` endpoints share one URL. Follow [RENDER_DEPLOYMENT.md](RENDER_DEPLOYMENT.md) to deploy the included `render.yaml` Blueprint.
+
+The public configuration disables anonymous model retraining while keeping the simulation and demonstration controls available. All visitors share the same running simulation; a reset, location change, scenario selection, pause, or speed change affects everyone. Render's free filesystem is ephemeral, so a restart or redeploy can clear the model cache and in-memory history.
+
 
 ## Run it locally
 ### 1) Start Python backend
@@ -73,6 +76,17 @@ Typical test-set results (see `/api/ml/metrics` for your run): Random Forest PR-
 - `POST /api/simulation/reset` — reset seed/scenario
 - `POST /api/simulation/speed` — set simulation speed
 - `GET /api/simulation/scenarios` — available presets
+
+## Live model monitor (Research lab)
+Open **Research & Demo** in the top bar. The top section plots, for the running simulation, the live Random Forest probability (plus Gradient Boosting, Logistic Regression and the hand-written rule), the warn/watch thresholds for the current sensitivity, rain periods, and when the alert was on. At every rain onset it labels how many minutes of warning the alert gave (or "missed"). Speed (1x-60x) and Pause control the simulation clock. Data comes from `GET /api/ml/trace`.
+
+Rain-producing presets use a rewind-and-replay approach: their build-up is already visible in the history and rain is scheduled about 20 simulated minutes after selection, without an artificial sensor step. The `false_warning` preset intentionally produces a strong rain-like signal without rain, so a warning on that preset is a false positive. Re-posting the same location (the app does this on every page load) no longer resets the run.
+
+## Tests
+```bash
+cd backend
+python -m unittest test_simulator test_main
+```
 
 ## UI / usability study
 - PC: fixed sidebar navigation, status summary and responsive content area.
