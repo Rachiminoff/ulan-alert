@@ -1,0 +1,243 @@
+# API Contracts and Examples
+
+Ulan Alert exposes a FastAPI service. The routes below describe the current implementation in `backend/main.py`. Unless noted otherwise, responses are JSON. The API operates on one shared synthetic simulation in the running backend process.
+
+For the automatically generated interactive API reference, start the backend and open `/docs`. The OpenAPI schema is available at `/openapi.json` when the service is running.
+
+## Conventions
+
+- API paths are relative to the service origin; the frontend commonly uses `/api` as its base path.
+- POST examples use `Content-Type: application/json`.
+- The backend uses a shared simulation. A scenario/reset/speed/pause/location request affects all clients using that backend process.
+- The examples below are representative request/response shapes derived from the current handlers. Values such as timestamps and probabilities vary at runtime.
+- The API uses synthetic data. `synthetic: true` is an important provenance marker where included.
+
+## Health and current status
+
+### `GET /healthz`
+
+A lightweight health check. This route is excluded from the generated API schema.
+
+Example response:
+
+```json
+{
+  "ok": true,
+  "model_ready": false
+}
+```
+
+`model_ready` can be false while model loading/training is still in progress.
+
+### `GET /api/status`
+
+Returns the latest simulation state. The response includes the current probability, rain indicator, model readiness, scenario, location, timestamp, readings, simulation speed/state, and feature drivers.
+
+Example response (illustrative values):
+
+```json
+{
+  "probability": 0.37,
+  "raining": false,
+  "recently_wet": false,
+  "online": true,
+  "simulated": true,
+  "model_ready": true,
+  "scenario": "cloud_build",
+  "location": "Indang, Cavite, Philippines",
+  "timestamp": "2026-01-01T12:00:00",
+  "pressureDelta3h": -1.2,
+  "readings": {
+    "pressure": 1008.4,
+    "humidity": 83.2,
+    "temperature": 28.1,
+    "light": 42.5
+  },
+  "rain_mm": 0.0,
+  "speed": 1,
+  "running": true,
+  "drivers": []
+}
+```
+
+The `readings.light` value is expressed in the status response as a scaled value (`light_lux / 1000`), not raw lux. `probability` is returned as a numeric fraction from 0 to 1.
+
+## Simulation controls
+
+### `GET /api/simulation/scenarios`
+
+Returns the scenario identifiers and display labels currently exposed by the backend.
+
+### `POST /api/simulation/scenario`
+
+Request:
+
+```json
+{ "scenario": "cloud_build" }
+```
+
+Response:
+
+```json
+{ "scenario": "cloud_build", "ok": true }
+```
+
+Unknown scenario identifiers fall back to `natural` in the current handler/simulation logic. Clients should use identifiers returned by `/api/simulation/scenarios`.
+
+### `POST /api/simulation/reset`
+
+Request fields are optional. The current defaults are seed `73` and scenario `natural`.
+
+```json
+{ "seed": 73, "scenario": "natural" }
+```
+
+Response:
+
+```json
+{ "ok": true, "seed": 73, "scenario": "natural" }
+```
+
+A reset rebuilds the synthetic weather generator and warms its history so rolling features can be calculated immediately.
+
+### `POST /api/simulation/speed`
+
+Request:
+
+```json
+{ "speed": 5 }
+```
+
+Response:
+
+```json
+{ "speed": 5 }
+```
+
+The backend clamps the requested speed to the inclusive range 1–60.
+
+### `POST /api/simulation/pause`
+
+Request:
+
+```json
+{ "paused": true }
+```
+
+Response:
+
+```json
+{ "running": false }
+```
+
+The request sets the running state to the inverse of `paused`.
+
+## Location
+
+### `POST /api/location`
+
+Request:
+
+```json
+{
+  "name": "Indang, Cavite, Philippines",
+  "latitude": 14.1953,
+  "longitude": 120.8769,
+  "source": "manual"
+}
+```
+
+Successful response shape:
+
+```json
+{
+  "ok": true,
+  "location": {
+    "name": "Indang, Cavite, Philippines",
+    "latitude": 14.1953,
+    "longitude": 120.8769,
+    "source": "manual"
+  },
+  "reset": false
+}
+```
+
+Coordinates outside latitude `-90..90` or longitude `-180..180` produce `{ "ok": false, "message": "Coordinates are outside valid bounds" }`. When coordinates differ from the current location, the simulation resets. Posting the same coordinates does not reset it.
+
+## History
+
+### `GET /api/history?limit=500`
+
+Returns recent simulated readings and the associated probability for each retained row.
+
+```json
+{
+  "items": [
+    {
+      "timestamp": "2026-01-01T12:00:00",
+      "pressure": 1008.4,
+      "temperature": 28.1,
+      "humidity": 83.2,
+      "light": 42500.0,
+      "rain_mm": 0.0,
+      "raining": false,
+      "scenario": "cloud_build",
+      "probability": 0.37
+    }
+  ],
+  "synthetic": true
+}
+```
+
+The example contains one item for readability; the endpoint normally returns multiple rows. The requested limit is bounded to at least 1 and no more than the backend's `MAX_ROWS` retention limit.
+
+## Machine-learning information
+
+### `GET /api/ml/metrics`
+
+Returns the stored model metrics plus readiness/training flags, whether retraining is enabled, and a safe error message when training failed. The detailed metric keys are generated by `backend/ml.py`; consult the live response or `/docs` for the current exact structure rather than assuming every model run has identical metric values.
+
+### `GET /api/ml/features`
+
+Returns the feature names and human-readable definitions from `backend/features.py`.
+
+### `GET /api/ml/dataset?limit=100`
+
+Returns a preview of the synthetic training dataset, with feature columns and `rain_next_30min`. The preview is not a real-world weather dataset.
+
+### `POST /api/ml/train`
+
+Starts retraining in a background thread when `ULAN_ENABLE_RETRAIN` is enabled.
+
+Started response:
+
+```json
+{
+  "ok": true,
+  "training": true,
+  "message": "Training started",
+  "metrics": {}
+}
+```
+
+If training is already running, the handler returns `ok: false` and a message that training is already running. If retraining is disabled, the route responds with HTTP 403.
+
+### `GET /api/ml/live?minutes=1440`
+
+Evaluates the live model against the running simulation's recent history. The returned note warns that small evaluation windows are noisy. This is an evaluation of the simulation's own generated history, not an independent real-world test set.
+
+### `GET /api/ml/prediction-vs-reality?sensitivity=medium&limit=12`
+
+Compares matured predictions with whether rain occurred in the next 30 simulated minutes. Sensitivity values recognized by the handler are `low`, `medium`, and `high`; unknown values fall back to `medium`. The response includes confusion-matrix counts, aggregate metrics, pending rows whose outcome window has not elapsed, and recent individual records.
+
+### `GET /api/ml/trace?minutes=180&warn=...`
+
+Returns a per-minute trace for the running simulation, including model probabilities, wet/rain state, alert state, sensor series, event lead-time summaries, and current drivers. `minutes` is bounded to 30–720. If models are not ready, the response is `{ "model_ready": false }`.
+
+## Error and readiness behavior
+
+- A network failure or non-success HTTP response should be treated by the frontend as an unavailable API; the UI has an offline state.
+- Model readiness is separate from API availability. The service can answer requests while the model is still loading/training.
+- Retraining can be disabled in a public deployment, in which case the train route returns HTTP 403.
+- Invalid location coordinates return an application-level `{ "ok": false }` response in the current implementation; callers should check both HTTP status and the `ok` field.
+- The API is not currently described as a versioned public contract. If external clients are added, consider formal request/response models and explicit versioning before changing field names.
